@@ -2,3 +2,5 @@ uvicorn
 fastapi
 pydentic
 pymongo
+python-multipart
+pyjwt
