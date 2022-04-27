@@ -4,3 +4,4 @@ pydentic
 pymongo
 python-multipart
 pyjwt
+werkzeug
