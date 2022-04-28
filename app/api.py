@@ -41,7 +41,7 @@ async def api_root_get() -> dict:
   return {"message": "Welcome to the API of the Pic Carousel App"}
 
 #--------------------------------
-@app.post("/token")
+@app.post("/token", tags=["auth"])
 async def api_token_post(form_data: OAuth2PasswordRequestForm = Depends()):
   
   authRes = tools.check_auth(username=form_data.username, password=form_data.password)
@@ -62,7 +62,7 @@ async def api_token_post(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 #--------------------------------
-@app.get("/users")
+@app.get("/users", tags=["users"])
 async def api_users_get(token: str = Depends(oauth2_scheme)):
   check_admin(token)
 
@@ -70,7 +70,7 @@ async def api_users_get(token: str = Depends(oauth2_scheme)):
   return res
 
 #--------------------------------
-@app.post("/users")
+@app.post("/users", tags=["users"])
 async def api_users_post(item: User, token: str = Depends(oauth2_scheme)):
   check_admin(token)
 
@@ -84,14 +84,14 @@ async def api_users_post(item: User, token: str = Depends(oauth2_scheme)):
   return dictData
 
 #--------------------------------
-@app.get("/user/me")
+@app.get("/user/me", tags=["users"])
 async def api_user_me_get(token: str = Depends(oauth2_scheme)):
 
   res = tools.get_user_by_token(token)
   return res
 
 #--------------------------------
-@app.get("/user/{username}")
+@app.get("/user/{username}", tags=["users"])
 async def api_user_get(username, token: str = Depends(oauth2_scheme)):
   check_admin(token)
 
