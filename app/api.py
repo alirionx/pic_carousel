@@ -2,6 +2,7 @@ import os
 # os.environ["INIT_ADMIN_USER"] = "palim"
 
 from fastapi import FastAPI, Request, status, HTTPException, Depends
+from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, validator, EmailStr
 from typing import Literal, List
@@ -26,6 +27,12 @@ class User(BaseModel):
   firstname: str | None = None
   lastname: str
 
+class UserUpdate(BaseModel):
+  username: str  | None = None
+  role: Literal["user", "admin", "disabled"]  | None = None
+  email: EmailStr | None = None
+  firstname: str | None = None
+  lastname: str | None = None
 
 #-Auth Helper Functions------------------------------
 
@@ -100,6 +107,29 @@ async def api_user_get(username, token: str = Depends(oauth2_scheme)):
     raise HTTPException(status_code=400, detail="User '%s' not found" %username)
 
   return res
+
+#--------------------------------
+@app.put("/user/{username}", tags=["users"])
+async def api_user_put(item: UserUpdate, username:str, token:str = Depends(oauth2_scheme)):
+  check_admin(token)
+
+  usrDict = tools.get_user_by_name(username)
+  if not usrDict:
+    raise HTTPException(status_code=400, detail="User '%s' not found" %username)
+
+  usrUpd = jsonable_encoder(item)
+  mergedDict = helpers.merge_dicts(usrDict, usrUpd)
+  modelCheck = User(**mergedDict)
+
+  try:
+    res = tools.change_user_by_username(mergedDict)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
+  return res
+
+#--------------------------------
+
 
 #--------------------------------
 

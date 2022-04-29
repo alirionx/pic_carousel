@@ -23,4 +23,17 @@ def decode_jwt(jwt_str:str):
   return payload
 
 #-------------------------------------------
+def merge_dicts(a:dict, b:dict):
+  for key,val in b.items():
+    if val:
+      a[key] = val
+    # if val == "":
+    #   del a[key]
+  return a
+
+#-------------------------------------------
+
+
+
+#-------------------------------------------
 

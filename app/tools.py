@@ -93,7 +93,15 @@ def add_user(item):
   return str(id)
 
 #--------------------------
+def change_user_by_username(item):
+  userName = item["username"]
+  mongoDb = create_mongo_cli()
 
+  qry = {"username": userName}
+  newVals = { "$set": item }
+  mongoDb.users.update_one(qry, newVals)
+  
+  return item
 
 #--------------------------
 
