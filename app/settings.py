@@ -19,6 +19,8 @@ class envConfigMap:
     self.MONGODB_USER = "ANON"
     self.MONGODB_SECRET = "VERYSECRET"
 
+    self.MIN_PWD_LEN = 5
+
     #---------------------------------------
     for key, val in vars(self).items():
       if key.startswith("__"): 

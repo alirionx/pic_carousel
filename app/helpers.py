@@ -23,6 +23,16 @@ def decode_jwt(jwt_str:str):
   return payload
 
 #-------------------------------------------
+def remove_empty_strings_from_dict(item:dict):
+  newItem = {}
+  for key,val in item.items():
+    if val == "":
+      continue
+    newItem[key] = val
+
+  return newItem
+
+#-------------------------------------------
 def merge_dicts(a:dict, b:dict):
   for key,val in b.items():
     if val:

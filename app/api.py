@@ -4,8 +4,8 @@ import os
 from fastapi import FastAPI, Request, status, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, validator, EmailStr
-from typing import Literal, List
+from pydantic import BaseModel, validator, constr, EmailStr, SecretStr
+from typing import Literal
 import jwt
 import time
 
@@ -20,19 +20,21 @@ tools.initialize_db()
 
 #-Define the Data Models-----------------------------
 class User(BaseModel):
-  _id: str | None = None
-  username: str
+  username: constr(min_length=4)
   role: Literal["user", "admin", "disabled"]
   email: EmailStr
   firstname: str | None = None
-  lastname: str
+  lastname: constr(min_length=2)
 
-class UserUpdate(BaseModel):
-  username: str  | None = None
+class UserPatch(BaseModel):
+  username: constr(min_length=4)  | None = None
   role: Literal["user", "admin", "disabled"]  | None = None
   email: EmailStr | None = None
   firstname: str | None = None
-  lastname: str | None = None
+  lastname: constr(min_length=2) | None = None
+
+class Password(BaseModel):
+  password: SecretStr
 
 #-Auth Helper Functions------------------------------
 
@@ -47,7 +49,7 @@ def check_admin(token):
 async def api_root_get() -> dict:
   return {"message": "Welcome to the API of the Pic Carousel App"}
 
-#--------------------------------
+#--------------------------------------------
 @app.post("/token", tags=["auth"])
 async def api_token_post(form_data: OAuth2PasswordRequestForm = Depends()):
   
@@ -68,7 +70,7 @@ async def api_token_post(form_data: OAuth2PasswordRequestForm = Depends()):
   return {"access_token": jwtStr, "token_type": "Bearer"}
 
 
-#--------------------------------
+#--------------------------------------------
 @app.get("/users", tags=["users"])
 async def api_users_get(token: str = Depends(oauth2_scheme)):
   check_admin(token)
@@ -76,28 +78,27 @@ async def api_users_get(token: str = Depends(oauth2_scheme)):
   res = tools.get_users_from_db()
   return res
 
-#--------------------------------
+#--------------------------------------------
 @app.post("/users", tags=["users"])
 async def api_users_post(item: User, token: str = Depends(oauth2_scheme)):
   check_admin(token)
 
-  dictData = dict(item)
+  item = item.dict(exclude_none=True, exclude_unset=True)
   try:
-    id = tools.add_user(dictData)
+    id = tools.add_user(item)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
-  dictData["_id"] = id
-  return dictData
+  return item
 
-#--------------------------------
+#--------------------------------------------
 @app.get("/user/me", tags=["users"])
 async def api_user_me_get(token: str = Depends(oauth2_scheme)):
 
   res = tools.get_user_by_token(token)
   return res
 
-#--------------------------------
+#--------------------------------------------
 @app.get("/user/{username}", tags=["users"])
 async def api_user_get(username, token: str = Depends(oauth2_scheme)):
   check_admin(token)
@@ -108,33 +109,62 @@ async def api_user_get(username, token: str = Depends(oauth2_scheme)):
 
   return res
 
-#--------------------------------
+#--------------------------------------------
 @app.put("/user/{username}", tags=["users"])
-async def api_user_put(item: UserUpdate, username:str, token:str = Depends(oauth2_scheme)):
+async def api_user_put(item: User, username:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
   usrDict = tools.get_user_by_name(username)
   if not usrDict:
     raise HTTPException(status_code=400, detail="User '%s' not found" %username)
 
-  usrUpd = jsonable_encoder(item)
-  mergedDict = helpers.merge_dicts(usrDict, usrUpd)
-  modelCheck = User(**mergedDict)
+  item = item.dict(exclude_none=True, exclude_unset=True)
 
   try:
-    res = tools.change_user_by_username(mergedDict)
+    # res = tools.change_user_by_username(mergedDict)
+    res = tools.replace_user_by_username(username, item)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
-  return res
+  return item
 
-#--------------------------------
+#--------------------------------------------
+@app.patch("/user/{username}", tags=["users"])
+async def api_user_patch(item: UserPatch, username:str, token:str = Depends(oauth2_scheme)):
+  check_admin(token)
+  
+  res = tools.get_user_by_name(username)
+  if not res:
+    raise HTTPException(status_code=404, detail="User '%s' not found" %username)
+  
+  existingItem = User(**res)
+  newItem = item.dict(exclude_none=True, exclude_unset=True)
+  updatedItem = existingItem.copy(update=newItem)
+  
+  dbItem = updatedItem.dict(exclude_none=True, exclude_unset=True)
+  tools.replace_user_by_username(username, dbItem)
+
+  return updatedItem
+  
+
+#--------------------------------------------
+@app.put("/user/password/{username}", tags=["users"])
+async def api_user_patch(item: Password, username:str, token:str = Depends(oauth2_scheme)):
+  check_admin(token)
+
+  password = item.password.get_secret_value()
+  if len(password) < settings.configMap.MIN_PWD_LEN:
+    raise HTTPException(status_code=400, detail="password to short")
+
+  try:
+    tools.set_user_password_hash(username=username, password=password)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+  return item
 
 
-#--------------------------------
-
-
-#--------------------------------
+#--------------------------------------------
 
 
 
