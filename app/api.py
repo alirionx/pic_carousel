@@ -49,6 +49,7 @@ def check_admin(token):
 async def api_root_get() -> dict:
   return {"message": "Welcome to the API of the Pic Carousel App"}
 
+
 #--------------------------------------------
 @app.post("/token", tags=["auth"])
 async def api_token_post(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -78,6 +79,7 @@ async def api_users_get(token: str = Depends(oauth2_scheme)):
   res = tools.get_users_from_db()
   return res
 
+
 #--------------------------------------------
 @app.post("/users", tags=["users"])
 async def api_users_post(item: User, token: str = Depends(oauth2_scheme)):
@@ -91,12 +93,14 @@ async def api_users_post(item: User, token: str = Depends(oauth2_scheme)):
 
   return item
 
+
 #--------------------------------------------
 @app.get("/user/me", tags=["users"])
 async def api_user_me_get(token: str = Depends(oauth2_scheme)):
 
   res = tools.get_user_by_token(token)
   return res
+
 
 #--------------------------------------------
 @app.get("/user/{username}", tags=["users"])
@@ -108,6 +112,7 @@ async def api_user_get(username, token: str = Depends(oauth2_scheme)):
     raise HTTPException(status_code=400, detail="User '%s' not found" %username)
 
   return res
+
 
 #--------------------------------------------
 @app.put("/user/{username}", tags=["users"])
@@ -128,6 +133,7 @@ async def api_user_put(item: User, username:str, token:str = Depends(oauth2_sche
   
   return item
 
+
 #--------------------------------------------
 @app.patch("/user/{username}", tags=["users"])
 async def api_user_patch(item: UserPatch, username:str, token:str = Depends(oauth2_scheme)):
@@ -145,7 +151,19 @@ async def api_user_patch(item: UserPatch, username:str, token:str = Depends(oaut
   tools.replace_user_by_username(username, dbItem)
 
   return updatedItem
-  
+
+
+#--------------------------------------------
+@app.delete("/user/{username}", tags=["users"])
+async def api_user_delete(username:str, token:str = Depends(oauth2_scheme)):
+  check_admin(token)
+
+  res = tools.delete_user_by_username(username=username)
+  if not res :
+    raise HTTPException(status_code=400, detail="User '%s' does not exist or faild to delete" %username)
+
+  return {"username": username}  
+
 
 #--------------------------------------------
 @app.put("/user/password/{username}", tags=["users"])
@@ -167,8 +185,10 @@ async def api_user_patch(item: Password, username:str, token:str = Depends(oauth
 #--------------------------------------------
 
 
+#--------------------------------------------
 
 
+#--------------------------------------------
 
 
 

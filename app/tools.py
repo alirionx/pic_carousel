@@ -33,36 +33,14 @@ def check_auth(username:str, password:str ):
   mongoDb = create_mongo_cli()
   # dbRes = mongoDb.users.find_one({"username": username})
   
-  dbRes = mongoDb.users.aggregate([
-    {
-        '$match': {
-            'username': username
-        }
-    }, {
-        '$lookup': {
-            'from': 'hashes', 
-            'localField': '_id', 
-            'foreignField': 'user_id', 
-            'as': 'item'
-        }
-    }, {
-        '$addFields': {
-            'password_hash': {
-                '$first': '$item.password_hash'
-            }
-        }
-    }, {
-        '$project': {
-            '_id': 0, 
-            'password_hash': 1
-        }
-    }
-  ])
-  resList = list(dbRes)
-  if not len(resList):
-    return False
-    
-  password_hash = resList[0]["password_hash"]
+  dbRes = mongoDb.users.find_one({"username": username}, {"_id": 1})
+  if not dbRes: return False
+
+  userId = str(dbRes["_id"])
+  dbRes = mongoDb.hashes.find_one({"user_id": userId}, {"_id": 0, "password_hash":1})
+  if not dbRes: return False
+
+  password_hash = dbRes["password_hash"]
   authRes = helpers.check_password_hash(hash=password_hash, password=password)
   return authRes 
 
@@ -141,6 +119,19 @@ def replace_user_by_username(username, item):
   mongoDb.users.replace_one(qry, item)
   
   return item
+
+#--------------------------
+def delete_user_by_username(username):
+  mongoDb = create_mongo_cli()
+
+  res = mongoDb.users.find_one({"username":username}, {"_id": 1})
+  if not res : return False 
+  userId = str(res["_id"])
+
+  res = mongoDb.users.delete_one({"username":username}).deleted_count
+  mongoDb.hashes.delete_one({"user_id":userId})
+  
+  return res
 
 #--------------------------
 def set_user_password_hash(username, password):
