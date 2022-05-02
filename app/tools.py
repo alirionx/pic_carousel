@@ -1,13 +1,21 @@
 import time
 import pymongo
+import gridfs
 from app.settings import configMap
 import app.helpers as helpers
 
-#--------------------------
+#--------------------------------------------------------------------
 def create_mongo_cli():
   mongoCli = pymongo.MongoClient("mongodb://%s:%s/" %(configMap.MONGODB_HOST, configMap.MONGODB_PORT))
   mongoDb = mongoCli[configMap.MONGODB_DBNAME]
   return mongoDb
+
+#--------------------------
+def create_gridfs_cli():
+  mongoCli = pymongo.MongoClient("mongodb://%s:%s/" %(configMap.MONGODB_HOST, configMap.MONGODB_PORT))
+  mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
+  gridFsCli =  gridfs.GridFS(mongoDb)
+  return gridFsCli
 
 #--------------------------
 def initialize_db():
@@ -28,7 +36,7 @@ def initialize_db():
     mongoDb.hashes.insert_one(hashDict)
   
 
-#--------------------------
+#--------------------------------------------------------------------
 def check_auth(username:str, password:str ):
   mongoDb = create_mongo_cli()
   # dbRes = mongoDb.users.find_one({"username": username})
@@ -152,12 +160,17 @@ def set_user_password_hash(username, password):
   mongoDb.hashes.delete_one({"user_id": id})
   mongoDb.hashes.insert_one(item)
 
+#--------------------------------------------------------------------
+async def add_image(file, username:str):
+  data = await file.read()
+  gridFsCli = create_gridfs_cli()
+  chk = gridFsCli.put(data, filename=file.filename, contentType=file.content_type, username=username )
+  return chk
+
 #--------------------------
 
 
 #--------------------------
 
 
-#--------------------------
-
-
+#--------------------------------------------------------------------

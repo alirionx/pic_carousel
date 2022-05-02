@@ -1,42 +1,27 @@
+import base64
 import os
 # os.environ["INIT_ADMIN_USER"] = "palim"
 
-from fastapi import FastAPI, Request, status, HTTPException, Depends
+from fastapi import FastAPI, Request, status, HTTPException, UploadFile, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, validator, constr, EmailStr, SecretStr
-from typing import Literal
+
 import jwt
 import time
 
 from app import helpers, settings, tools
+from app.models import User, UserPatch, UserMe, Password
+from app.models import allowedImageTypes, allowedImageLength
 
-#-Build the App--------------------------------------
+#-Build the App-------------------------------------------------
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-#-Initial Fuctions for App Prep----------------------
+#-Initial Fuctions for App Prep---------------------------------
 tools.initialize_db()
 
-#-Define the Data Models-----------------------------
-class User(BaseModel):
-  username: constr(min_length=4)
-  role: Literal["user", "admin", "disabled"]
-  email: EmailStr
-  firstname: str | None = None
-  lastname: constr(min_length=2)
 
-class UserPatch(BaseModel):
-  username: constr(min_length=4)  | None = None
-  role: Literal["user", "admin", "disabled"]  | None = None
-  email: EmailStr | None = None
-  firstname: str | None = None
-  lastname: constr(min_length=2) | None = None
-
-class Password(BaseModel):
-  password: SecretStr
-
-#-Auth Helper Functions------------------------------
+#-Auth Helper Functions-----------------------------------------
 
 def check_admin(token):
   chkAdmin = tools.check_admin_by_token(token)
@@ -44,7 +29,7 @@ def check_admin(token):
     raise HTTPException(status_code=400, detail="Must be admin")
 
 
-#-The Routes-----------------------------------------
+#-The Routes----------------------------------------------------
 @app.get("/", tags=["root"])
 async def api_root_get() -> dict:
   return {"message": "Welcome to the API of the Pic Carousel App"}
@@ -112,6 +97,26 @@ async def api_user_get(username, token: str = Depends(oauth2_scheme)):
     raise HTTPException(status_code=400, detail="User '%s' not found" %username)
 
   return res
+
+
+#--------------------------------------------
+@app.put("/user/me", tags=["users"])
+async def api_me_put(item: UserMe, token:str = Depends(oauth2_scheme)):
+  
+  res = tools.get_user_by_token(jwt_str=token)
+  username = res["username"]
+  
+  existingItem = User(**res)
+  newItem = item.dict(exclude_none=True, exclude_unset=True)
+  updatedItem = existingItem.copy(update=newItem)
+  dbItem = updatedItem.dict(exclude_none=True, exclude_unset=True)
+  
+  try:
+    res = tools.replace_user_by_username(username, dbItem)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
+  return item
 
 
 #--------------------------------------------
@@ -183,7 +188,23 @@ async def api_user_patch(item: Password, username:str, token:str = Depends(oauth
 
 
 #--------------------------------------------
+@app.post("/image", tags=["images"])
+async def image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
+  
+  if file.content_type not in allowedImageTypes:
+    raise HTTPException(status_code=400, detail="invalid file type. Please use '%s'" %allowedImageTypes)
 
+  # macht das hier Sinn??? Oder doch besser via DB Mechanism checken???
+  chkRead = await file.read()
+  chkLen = len(chkRead)
+  if chkLen > allowedImageLength:
+    raise HTTPException(status_code=400, detail="File to big")
+
+  res = tools.get_user_by_token(token) 
+  username = res["username"]
+  chk = await tools.add_image(file=file, username=username)
+  
+  return {"filename": file.filename}
 
 #--------------------------------------------
 

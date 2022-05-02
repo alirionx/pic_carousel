@@ -16,6 +16,7 @@ class envConfigMap:
     self.MONGODB_HOST = "localhost"
     self.MONGODB_PORT = 27017
     self.MONGODB_DBNAME = "pic_carousel"
+    self.MONGODB_GRIDFSDB = "pc_images"
     self.MONGODB_USER = "ANON"
     self.MONGODB_SECRET = "VERYSECRET"
 
