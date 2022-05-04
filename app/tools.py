@@ -1,12 +1,16 @@
 import time
 import pymongo
+from bson import ObjectId
 import gridfs
+from app import settings
 from app.settings import configMap
 import app.helpers as helpers
 
 #--------------------------------------------------------------------
-def create_mongo_cli():
+def create_mongo_cli(cli_only=False):
   mongoCli = pymongo.MongoClient("mongodb://%s:%s/" %(configMap.MONGODB_HOST, configMap.MONGODB_PORT))
+  if cli_only:
+    return mongoCli
   mongoDb = mongoCli[configMap.MONGODB_DBNAME]
   return mongoDb
 
@@ -30,7 +34,7 @@ def initialize_db():
     
     pwdHash = helpers.generate_password_hash(configMap.INIT_ADMIN_PASSWORD)
     hashDict = {
-      "user_id": userId,
+      "user_id": ObjectId(userId),
       "password_hash": pwdHash
     }
     mongoDb.hashes.insert_one(hashDict)
@@ -44,7 +48,7 @@ def check_auth(username:str, password:str ):
   dbRes = mongoDb.users.find_one({"username": username}, {"_id": 1})
   if not dbRes: return False
 
-  userId = str(dbRes["_id"])
+  userId = dbRes["_id"]
   dbRes = mongoDb.hashes.find_one({"user_id": userId}, {"_id": 0, "password_hash":1})
   if not dbRes: return False
 
@@ -53,9 +57,9 @@ def check_auth(username:str, password:str ):
   return authRes 
 
 #--------------------------
-def get_user_by_name(username):
+def get_user_by_name(username, object_id=False):
   mongoDb = create_mongo_cli()
-  dbRes = mongoDb.users.find_one( {"username": username}, {"_id":0} )
+  dbRes = mongoDb.users.find_one( {"username": username}, {"_id":object_id} )
   return dbRes
 
 #--------------------------
@@ -148,7 +152,7 @@ def set_user_password_hash(username, password):
   chk = mongoDb.users.find_one( {"username": username}, {"_id":1} )
   if not chk:
     raise Exception("user '%s' does not exist" %username)
-  id = str(chk["_id"])
+  id = chk["_id"]
   hash = helpers.generate_password_hash(password)
 
   item = {
@@ -162,13 +166,52 @@ def set_user_password_hash(username, password):
 
 #--------------------------------------------------------------------
 async def add_image(file, username:str):
+  userId = get_user_by_name(username=username, object_id=1)["_id"]
   data = await file.read()
   gridFsCli = create_gridfs_cli()
-  chk = gridFsCli.put(data, filename=file.filename, contentType=file.content_type, username=username )
+  chk = gridFsCli.put(data, filename=file.filename, contentType=file.content_type, user_id=userId )
   return chk
 
 #--------------------------
+def get_images(username:str):
+  userId = get_user_by_name(username=username, object_id=1)["_id"]
 
+  mongoCli = create_mongo_cli(cli_only=True)
+  mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
+  
+  res = mongoDb["fs.files"].aggregate([
+    {
+      '$match': { 'user_id': userId }
+    }, 
+    {
+      '$addFields': {
+        'id': {'$toString': '$_id'}
+      }
+    }, 
+    {
+      '$project': {'user_id': 0, '_id': 0 }
+    }
+  ])
+
+  return list(res)
+
+#--------------------------
+async def get_image_byte(id:str, username:str):
+  userId = get_user_by_name(username=username, object_id=1)["_id"]
+
+  mongoCli = create_mongo_cli(cli_only=True)
+  mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
+  chk = mongoDb["fs.files"].find_one({"user_id": userId, "_id": ObjectId(id)})
+  if not chk:
+    raise Exception("Image with id '%s' not found or not allowed" %id)
+  else:
+    contentType = chk["contentType"]
+  
+  gridFsCli = create_gridfs_cli()
+  # data = gridFsCli.find_one({"_id": ObjectId(id)},no_cursor_timeout=True)
+  res = gridFsCli.get(ObjectId(id)).read()
+
+  return res, contentType
 
 #--------------------------
 

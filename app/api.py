@@ -5,7 +5,9 @@ import os
 from fastapi import FastAPI, Request, status, HTTPException, UploadFile, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import StreamingResponse
 
+from io import BytesIO
 import jwt
 import time
 
@@ -89,7 +91,7 @@ async def api_user_me_get(token: str = Depends(oauth2_scheme)):
 
 #--------------------------------------------
 @app.get("/user/{username}", tags=["users"])
-async def api_user_get(username, token: str = Depends(oauth2_scheme)):
+async def api_user_get(username:str, token: str = Depends(oauth2_scheme)):
   check_admin(token)
 
   res = tools.get_user_by_name(username)
@@ -188,18 +190,20 @@ async def api_user_patch(item: Password, username:str, token:str = Depends(oauth
 
 
 #--------------------------------------------
+@app.get("/images", tags=["images"])
+async def images_get(token:str = Depends(oauth2_scheme)):
+  
+  userName = tools.get_user_by_token(token)["username"]
+  res = tools.get_images(username=userName)
+  return res
+
+#--------------------------------------------
 @app.post("/image", tags=["images"])
 async def image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
   
   if file.content_type not in allowedImageTypes:
     raise HTTPException(status_code=400, detail="invalid file type. Please use '%s'" %allowedImageTypes)
-
-  # macht das hier Sinn??? Oder doch besser via DB Mechanism checken???
-  chkRead = await file.read()
-  chkLen = len(chkRead)
-  if chkLen > allowedImageLength:
-    raise HTTPException(status_code=400, detail="File to big")
-
+ 
   res = tools.get_user_by_token(token) 
   username = res["username"]
   chk = await tools.add_image(file=file, username=username)
@@ -207,7 +211,12 @@ async def image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
   return {"filename": file.filename}
 
 #--------------------------------------------
-
+@app.get("/stream/{id}", tags=["images"])
+async def stream_get(id:str, token:str = Depends(oauth2_scheme)):
+  
+  userName = tools.get_user_by_token(token)["username"]
+  res, contentType = await tools.get_image_byte(id=id, username=userName)
+  return StreamingResponse(BytesIO(res), media_type=contentType)
 
 #--------------------------------------------
 
