@@ -213,9 +213,13 @@ async def image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
 #--------------------------------------------
 @app.get("/stream/{id}", tags=["images"])
 async def stream_get(id:str, token:str = Depends(oauth2_scheme)):
-  
-  userName = tools.get_user_by_token(token)["username"]
-  res, contentType = await tools.get_image_byte(id=id, username=userName)
+
+  try:
+    userName = tools.get_user_by_token(token)["username"]
+    res, contentType = await tools.get_image_byte(id=id, username=userName)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
   return StreamingResponse(BytesIO(res), media_type=contentType)
 
 #--------------------------------------------

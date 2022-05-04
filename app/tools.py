@@ -197,11 +197,13 @@ def get_images(username:str):
 
 #--------------------------
 async def get_image_byte(id:str, username:str):
+  
+  picId = ObjectId(id)
   userId = get_user_by_name(username=username, object_id=1)["_id"]
 
   mongoCli = create_mongo_cli(cli_only=True)
   mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
-  chk = mongoDb["fs.files"].find_one({"user_id": userId, "_id": ObjectId(id)})
+  chk = mongoDb["fs.files"].find_one({"user_id": userId, "_id": picId})
   if not chk:
     raise Exception("Image with id '%s' not found or not allowed" %id)
   else:
