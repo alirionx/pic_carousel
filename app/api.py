@@ -190,18 +190,19 @@ async def api_user_patch(item: Password, username:str, token:str = Depends(oauth
 
 #--------------------------------------------
 @app.get("/carousels", tags=["carousels"])
-async def carousels_get(token:str = Depends(oauth2_scheme)):
+async def api_carousels_get(token:str = Depends(oauth2_scheme)):
   
   userName = tools.get_user_by_token(token)["username"]
   res = tools.get_carousels(username=userName)
+
+  # print(res)
   return res
 
 #-----------------------
 @app.post("/carousels", tags=["carousels"])
-async def carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
+async def api_carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
   
   userName = tools.get_user_by_token(token)["username"]
-
   item = item.dict(exclude_none=True, exclude_unset=True)
 
   try:
@@ -211,9 +212,25 @@ async def carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
 
   return res
 
+#-----------------------
+@app.put("/carousels/{id}", tags=["carousels"])
+async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_scheme)):
+  
+  userName = tools.get_user_by_token(token)["username"]
+  item = item.dict(exclude_none=True, exclude_unset=True)
+
+  chk = tools.check_carousel_owner(username=userName, id=id)
+
+  try:
+    res = tools.replace_carousel_by_id(id=id, item=item)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+  return res
+
 #--------------------------------------------
 @app.get("/images", tags=["images"])
-async def images_get(token:str = Depends(oauth2_scheme)):
+async def api_images_get(token:str = Depends(oauth2_scheme)):
   
   userName = tools.get_user_by_token(token)["username"]
   res = tools.get_images(username=userName)
@@ -221,7 +238,7 @@ async def images_get(token:str = Depends(oauth2_scheme)):
 
 #-------------
 @app.get("/thumbs", tags=["images"])
-async def thumbs_get(token:str = Depends(oauth2_scheme)):
+async def api_thumbs_get(token:str = Depends(oauth2_scheme)):
   
   userName = tools.get_user_by_token(token)["username"]
   res = tools.get_images(username=userName, thumbs=True)
@@ -229,7 +246,7 @@ async def thumbs_get(token:str = Depends(oauth2_scheme)):
 
 #--------------------------------------------
 @app.post("/image", tags=["images"])
-async def image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
+async def api_image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
   
   if file.content_type not in imageTypesCompression.keys():
     raise HTTPException(status_code=400, detail="invalid file type. Please use '%s'" %imageTypesCompression.keys())
@@ -242,7 +259,7 @@ async def image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
 
 #--------------------------------------------
 @app.get("/stream/{id}", tags=["images"])
-async def stream_get(id:str, token:str = Depends(oauth2_scheme)):
+async def api_stream_get(id:str, token:str = Depends(oauth2_scheme)):
 
   try:
     userName = tools.get_user_by_token(token)["username"]

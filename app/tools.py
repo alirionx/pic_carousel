@@ -260,7 +260,10 @@ def get_carousels(username:str, thumbs=False):
 
   mongoDb = create_mongo_cli()
   qry = [ 
-    { '$addFields': {'_id': { '$toString': '$_id' } }}
+    { '$addFields': {
+      '_id': { '$toString': '$_id' },
+      'user_id': { '$toString': '$user_id' },
+    }}
   ]
   dbRes = mongoDb.carousels.aggregate(qry)
   return list(dbRes)
@@ -275,6 +278,32 @@ def add_carousel(item:dict, username:str):
   del res["_id"]
   del res["user_id"]
   return res
+
+#--------------------------
+def replace_carousel_by_id(id:str, item:dict):
+  mongoDb = create_mongo_cli()
+
+  qry = {"_id": ObjectId(id)}
+  mongoDb.carousels.replace_one(qry, item)
+  
+  return item
+
+#--------------------------
+def check_carousel_owner(username:str, id:str):
+  mongoDb = create_mongo_cli()
+  userId = get_user_by_name(username=username, object_id=1)["_id"]
+
+  qry = {
+    "_id": ObjectId(id),
+    "user_id": ObjectId(userId)
+  }
+  print(qry)
+
+  res = mongoDb.carousels.find_one(qry)
+  print(res)
+  return res
+
+
 
 
 #--------------------------------------------------------------------
