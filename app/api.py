@@ -12,8 +12,8 @@ import jwt
 import time
 
 from app import helpers, settings, tools
-from app.models import User, UserPatch, UserMe, Password
-from app.models import allowedImageTypes, allowedImageLength
+from app.models import User, UserPatch, UserMe, Password, Carousel
+from app.models import imageTypesCompression, allowedImageLength
 
 #-Build the App-------------------------------------------------
 app = FastAPI()
@@ -188,6 +188,28 @@ async def api_user_patch(item: Password, username:str, token:str = Depends(oauth
 
   return item
 
+#--------------------------------------------
+@app.get("/carousels", tags=["carousels"])
+async def carousels_get(token:str = Depends(oauth2_scheme)):
+  
+  userName = tools.get_user_by_token(token)["username"]
+  res = tools.get_carousels(username=userName)
+  return res
+
+#-----------------------
+@app.post("/carousels", tags=["carousels"])
+async def carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
+  
+  userName = tools.get_user_by_token(token)["username"]
+
+  item = item.dict(exclude_none=True, exclude_unset=True)
+
+  try:
+    res = tools.add_carousel(item=item, username=userName)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+  return res
 
 #--------------------------------------------
 @app.get("/images", tags=["images"])
@@ -197,18 +219,26 @@ async def images_get(token:str = Depends(oauth2_scheme)):
   res = tools.get_images(username=userName)
   return res
 
+#-------------
+@app.get("/thumbs", tags=["images"])
+async def thumbs_get(token:str = Depends(oauth2_scheme)):
+  
+  userName = tools.get_user_by_token(token)["username"]
+  res = tools.get_images(username=userName, thumbs=True)
+  return res
+
 #--------------------------------------------
 @app.post("/image", tags=["images"])
 async def image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
   
-  if file.content_type not in allowedImageTypes:
-    raise HTTPException(status_code=400, detail="invalid file type. Please use '%s'" %allowedImageTypes)
- 
+  if file.content_type not in imageTypesCompression.keys():
+    raise HTTPException(status_code=400, detail="invalid file type. Please use '%s'" %imageTypesCompression.keys())
+
   res = tools.get_user_by_token(token) 
   username = res["username"]
-  chk = await tools.add_image(file=file, username=username)
+  res = await tools.add_image(file=file, username=username)
   
-  return {"filename": file.filename}
+  return res
 
 #--------------------------------------------
 @app.get("/stream/{id}", tags=["images"])
@@ -226,20 +256,10 @@ async def stream_get(id:str, token:str = Depends(oauth2_scheme)):
 
 
 
-#-TEST AREA
+#-TEST AREA------------------------------------------
+
 #--------------------------------
-# @app.get("/users/me")
-# # async def read_users_me(current_user: User = Depends(get_current_user)):
-# #   return current_user
 
-# async def read_user_me( token: str = Depends(oauth2_scheme) ):
-#   dbRes = tools.get_user_by_token(token)
-
-#   res = User(username=dbRes["username"])
-#   for key,val in dbRes.items():
-#     setattr(res, key, val)
-
-#   return res
 
 #--------------------------------
 

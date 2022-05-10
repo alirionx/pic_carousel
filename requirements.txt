@@ -6,3 +6,4 @@ pymongo
 python-multipart
 pyjwt
 werkzeug
+pillow

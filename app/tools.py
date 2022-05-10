@@ -2,9 +2,12 @@ import time
 import pymongo
 from bson import ObjectId
 import gridfs
-from app import settings
+from app import models, settings
 from app.settings import configMap
 import app.helpers as helpers
+
+from PIL import Image
+from io import BytesIO, StringIO
 
 #--------------------------------------------------------------------
 def create_mongo_cli(cli_only=False):
@@ -86,11 +89,7 @@ def get_users_from_db():
     { '$project': { 'password_hash': 0, "_id": 0 } }
   ]
   dbRes = mongoDb.users.aggregate(qry)
-  resList = []
-  for item in dbRes:
-    resList.append(item)
-
-  return resList
+  return list(dbRes)
 
 #--------------------------
 def get_list_of_usernames_from_db():
@@ -165,15 +164,54 @@ def set_user_password_hash(username, password):
   mongoDb.hashes.insert_one(item)
 
 #--------------------------------------------------------------------
+#--- EinTraum in Code ;) ---#
 async def add_image(file, username:str):
   userId = get_user_by_name(username=username, object_id=1)["_id"]
   data = await file.read()
-  gridFsCli = create_gridfs_cli()
-  chk = gridFsCli.put(data, filename=file.filename, contentType=file.content_type, user_id=userId )
-  return chk
+  imageData = Image.open(BytesIO(data))
+  imageFormat = file.content_type.split("/")[1]
 
+  # Warum ich das nicht in eine Schleife packen kann, ist mir unklar....
+  # Wenn ich das mache, schreibt er nen Nuller in GridFS... Wird evtl. an Async oder Byteio liegen..  
+
+  curWith, curHeight = imageData.size
+  newImageWith, newImageHeight = helpers.calc_image_size(curWith, curHeight)
+  newThumbWith, newThumbHeight = helpers.calc_image_size(curWith, curHeight, thumb=True)
+  
+  newImageObj = imageData.resize((newImageWith, newImageHeight))
+  newThumbObj = imageData.resize((newThumbWith, newThumbHeight))
+  
+  imageBuffer = BytesIO()
+  thumbBuffer = BytesIO()
+  
+  newImageObj.save(imageBuffer, format=imageFormat, optimize=True, quality=models.imageTypesCompression[file.content_type])
+  imageBuffer.seek(0)
+  newThumbObj.save(thumbBuffer, format=imageFormat, optimize=True, quality=models.imageTypesCompression[file.content_type])
+  thumbBuffer.seek(0)
+
+  gridFsCli = create_gridfs_cli()
+  gridFsCli.put(
+    imageBuffer, 
+    filename=file.filename, 
+    contentType=file.content_type, 
+    type="image", 
+    user_id=userId 
+  )
+  gridFsCli.put(
+    thumbBuffer, 
+    filename=file.filename, 
+    contentType=file.content_type, 
+    type="thumb", 
+    user_id=userId 
+  )
+  
+  return True
+  
 #--------------------------
-def get_images(username:str):
+def get_images(username:str, thumbs=False):
+  imgType = "image"
+  if thumbs: imgType = "thumb"
+
   userId = get_user_by_name(username=username, object_id=1)["_id"]
 
   mongoCli = create_mongo_cli(cli_only=True)
@@ -181,7 +219,7 @@ def get_images(username:str):
   
   res = mongoDb["fs.files"].aggregate([
     {
-      '$match': { 'user_id': userId }
+      '$match': { 'user_id': userId, "type": imgType }
     }, 
     {
       '$addFields': {
@@ -216,6 +254,27 @@ async def get_image_byte(id:str, username:str):
   return res, contentType
 
 #--------------------------
+def get_carousels(username:str, thumbs=False):
+
+  userId = get_user_by_name(username=username, object_id=1)["_id"]
+
+  mongoDb = create_mongo_cli()
+  qry = [ 
+    { '$addFields': {'_id': { '$toString': '$_id' } }}
+  ]
+  dbRes = mongoDb.carousels.aggregate(qry)
+  return list(dbRes)
+
+#--------------------------
+def add_carousel(item:dict, username:str):
+  userId = get_user_by_name(username=username, object_id=1)["_id"]
+  item["user_id"] = userId
+  mongoDb = create_mongo_cli()
+  mongoDb.carousels.insert_one(item)
+  res = dict(item)
+  del res["_id"]
+  del res["user_id"]
+  return res
 
 
 #--------------------------------------------------------------------

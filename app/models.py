@@ -29,15 +29,24 @@ class Carousel(BaseModel):
   name: constr(min_length=4)
   state: Literal["private", "public", "disabled"]
   description: str | None = None
-
+  mode: Literal["fade", "slide"]
+  timeout: int | None = 10
+  
 
 #-Further Definitions------------------------------
 
-allowedImageTypes = [
-  "image/jpeg",
-  "image/png",
-  # "image/x-icon"
-]
+imageTypesCompression = {
+  "image/jpeg": 80,
+  "image/png": 5,
+}
+
 allowedImageLength = 8388608
+
+imageParas = {
+  "thumbHeight": 200,
+  "maxImageHeigh": 800,
+}
+
+
 
 #--------------------------------------------------

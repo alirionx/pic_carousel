@@ -1,6 +1,9 @@
 from werkzeug import security
 import jwt
 from app.settings import configMap
+from app import models
+# import pymongo
+import bson
 
 #-------------------------------------------
 def generate_password_hash(password:str):
@@ -42,7 +45,26 @@ def merge_dicts(a:dict, b:dict):
   return a
 
 #-------------------------------------------
+def calc_image_size(width:int, height:int, thumb=False):
 
+  curHeight = models.imageParas["maxImageHeigh"]
+  if thumb:
+    curHeight = models.imageParas["thumbHeight"]
+
+  rel = width / height
+  newWith = curHeight * rel
+
+  return round(newWith), curHeight
+
+
+#-------------------------------------------
+#SCHROTT, get net
+# def remove_objectids_from_dict(item:dict):
+#   for key,val in item.items():
+#     if str(type(val)) == 'bson.objectid.ObjectId':
+#       item[key] = str(val)
+
+#     return item
 
 
 #-------------------------------------------
