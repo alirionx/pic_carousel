@@ -74,11 +74,11 @@ async def api_users_post(item: User, token: str = Depends(oauth2_scheme)):
 
   item = item.dict(exclude_none=True, exclude_unset=True)
   try:
-    id = tools.add_user(item)
+    res = tools.add_user(item)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
-  return item
+  return res
 
 
 #--------------------------------------------
@@ -90,23 +90,22 @@ async def api_user_me_get(token: str = Depends(oauth2_scheme)):
 
 
 #--------------------------------------------
-@app.get("/user/{username}", tags=["users"])
-async def api_user_get(username:str, token: str = Depends(oauth2_scheme)):
+@app.get("/user/{id}", tags=["users"])
+async def api_user_get(id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
-  res = tools.get_user_by_name(username)
+  res = tools.get_user_by_id(id=id)
   if not res:
-    raise HTTPException(status_code=400, detail="User '%s' not found" %username)
+    raise HTTPException(status_code=400, detail="User '%s' not found" %id)
 
   return res
-
 
 #--------------------------------------------
 @app.put("/user/me", tags=["users"])
 async def api_me_put(item: UserMe, token:str = Depends(oauth2_scheme)):
   
   res = tools.get_user_by_token(jwt_str=token)
-  username = res["username"]
+  id = res["_id"]
   
   existingItem = User(**res)
   newItem = item.dict(exclude_none=True, exclude_unset=True)
@@ -114,67 +113,86 @@ async def api_me_put(item: UserMe, token:str = Depends(oauth2_scheme)):
   dbItem = updatedItem.dict(exclude_none=True, exclude_unset=True)
   
   try:
-    res = tools.replace_user_by_username(username, dbItem)
+    res = tools.replace_user_by_id(id, dbItem)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
-  return item
+  return res
 
 
 #--------------------------------------------
-@app.put("/user/{username}", tags=["users"])
-async def api_user_put(item: User, username:str, token:str = Depends(oauth2_scheme)):
+@app.put("/user/{id}", tags=["users"])
+async def api_user_put(item: User, id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
-  usrDict = tools.get_user_by_name(username)
+  usrDict = tools.get_user_by_id(id)
   if not usrDict:
-    raise HTTPException(status_code=400, detail="User '%s' not found" %username)
+    raise HTTPException(status_code=400, detail="User '%s' not found" %id)
 
   item = item.dict(exclude_none=True, exclude_unset=True)
 
   try:
     # res = tools.change_user_by_username(mergedDict)
-    res = tools.replace_user_by_username(username, item)
+    res = tools.replace_user_by_id(id, item)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
-  return item
+  return res
 
 
 #--------------------------------------------
-@app.patch("/user/{username}", tags=["users"])
-async def api_user_patch(item: UserPatch, username:str, token:str = Depends(oauth2_scheme)):
+@app.patch("/user/{id}", tags=["users"])
+async def api_user_patch(item: UserPatch, id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
   
-  res = tools.get_user_by_name(username)
+  res = tools.get_user_by_id(id)
   if not res:
-    raise HTTPException(status_code=404, detail="User '%s' not found" %username)
+    raise HTTPException(status_code=404, detail="User '%s' not found" %id)
   
   existingItem = User(**res)
   newItem = item.dict(exclude_none=True, exclude_unset=True)
   updatedItem = existingItem.copy(update=newItem)
   
   dbItem = updatedItem.dict(exclude_none=True, exclude_unset=True)
-  tools.replace_user_by_username(username, dbItem)
+  item = tools.replace_user_by_id(id, dbItem)
 
-  return updatedItem
+  return item
 
 
 #--------------------------------------------
-@app.delete("/user/{username}", tags=["users"])
-async def api_user_delete(username:str, token:str = Depends(oauth2_scheme)):
+@app.delete("/user/{id}", tags=["users"])
+async def api_user_delete(id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
-  res = tools.delete_user_by_username(username=username)
+  res = tools.delete_user_by_id(id=id)
   if not res :
-    raise HTTPException(status_code=400, detail="User '%s' does not exist or faild to delete" %username)
+    raise HTTPException(status_code=400, detail="User '%s' does not exist or faild to delete" %id)
 
-  return {"username": username}  
+  return {"_id": id}  
 
 
 #--------------------------------------------
-@app.put("/user/password/{username}", tags=["users"])
-async def api_user_patch(item: Password, username:str, token:str = Depends(oauth2_scheme)):
+@app.put("/user/password/me", tags=["users"])
+async def api_user_patch(item: Password, token:str = Depends(oauth2_scheme)):
+
+  res = tools.get_user_by_token(jwt_str=token)
+  id = res["_id"]
+
+  password = item.password.get_secret_value()
+  if len(password) < settings.configMap.MIN_PWD_LEN:
+    raise HTTPException(status_code=400, detail="password to short")
+
+  try:
+    tools.set_user_password_hash(id=id, password=password)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+  return item
+
+
+#--------------------------------------------
+@app.put("/user/password/{id}", tags=["users"])
+async def api_user_patch(item: Password, id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
   password = item.password.get_secret_value()
@@ -182,31 +200,29 @@ async def api_user_patch(item: Password, username:str, token:str = Depends(oauth
     raise HTTPException(status_code=400, detail="password to short")
 
   try:
-    tools.set_user_password_hash(username=username, password=password)
+    tools.set_user_password_hash(id=id, password=password)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
   return item
 
+
 #--------------------------------------------
 @app.get("/carousels", tags=["carousels"])
 async def api_carousels_get(token:str = Depends(oauth2_scheme)):
-  
-  userName = tools.get_user_by_token(token)["username"]
-  res = tools.get_carousels(username=userName)
-
-  # print(res)
+  id = tools.get_user_by_token(token)["_id"]
+  res = tools.get_carousels(id=id)
   return res
 
 #-----------------------
 @app.post("/carousels", tags=["carousels"])
 async def api_carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
   
-  userName = tools.get_user_by_token(token)["username"]
+  user_id = tools.get_user_by_token(token)["_id"]
   item = item.dict(exclude_none=True, exclude_unset=True)
 
   try:
-    res = tools.add_carousel(item=item, username=userName)
+    res = tools.add_carousel(item=item, user_id=user_id)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
@@ -216,13 +232,15 @@ async def api_carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
 @app.put("/carousels/{id}", tags=["carousels"])
 async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_scheme)):
   
-  userName = tools.get_user_by_token(token)["username"]
+  user_id = tools.get_user_by_token(token)["_id"]
   item = item.dict(exclude_none=True, exclude_unset=True)
 
-  chk = tools.check_carousel_owner(username=userName, id=id)
+  chk = tools.check_carousel_owner(user_id=user_id, id=id)
+  if not chk:
+    raise HTTPException(status_code=400, detail="carousel not found or not owned by you")
 
   try:
-    res = tools.replace_carousel_by_id(id=id, item=item)
+    res = tools.replace_carousel_by_id(id=id, user_id=user_id, item=item)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
@@ -232,16 +250,17 @@ async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_sc
 @app.get("/images", tags=["images"])
 async def api_images_get(token:str = Depends(oauth2_scheme)):
   
-  userName = tools.get_user_by_token(token)["username"]
-  res = tools.get_images(username=userName)
+  user_id = tools.get_user_by_token(token)["_id"]
+  res = tools.get_images(user_id=user_id)
   return res
+
 
 #-------------
 @app.get("/thumbs", tags=["images"])
 async def api_thumbs_get(token:str = Depends(oauth2_scheme)):
   
-  userName = tools.get_user_by_token(token)["username"]
-  res = tools.get_images(username=userName, thumbs=True)
+  user_id = tools.get_user_by_token(token)["_id"]
+  res = tools.get_images(user_id=user_id, thumbs=True)
   return res
 
 #--------------------------------------------
@@ -262,8 +281,8 @@ async def api_image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
 async def api_stream_get(id:str, token:str = Depends(oauth2_scheme)):
 
   try:
-    userName = tools.get_user_by_token(token)["username"]
-    res, contentType = await tools.get_image_byte(id=id, username=userName)
+    user_id = tools.get_user_by_token(token)["_id"]
+    res, contentType = await tools.get_image_byte(id=id, user_id=user_id)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 

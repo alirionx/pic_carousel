@@ -3,7 +3,7 @@ import jwt
 from app.settings import configMap
 from app import models
 # import pymongo
-import bson
+from bson import ObjectId
 
 #-------------------------------------------
 def generate_password_hash(password:str):
@@ -58,13 +58,18 @@ def calc_image_size(width:int, height:int, thumb=False):
 
 
 #-------------------------------------------
-#SCHROTT, get net
-# def remove_objectids_from_dict(item:dict):
-#   for key,val in item.items():
-#     if str(type(val)) == 'bson.objectid.ObjectId':
-#       item[key] = str(val)
+def objectid_to_str_in_dict(item:dict):
+  for key,val in item.items():
+    if ObjectId.is_valid(val):
+      item[key] = str(val)
+  return item
 
-#     return item
+#---------------------
+def str_to_objectid_in_dict(item:dict):
+  for key,val in item.items():
+    if ObjectId.is_valid(val):
+      item[key] = ObjectId(val)
+  return item
 
 
 #-------------------------------------------
