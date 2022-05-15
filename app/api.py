@@ -219,14 +219,26 @@ async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_sc
   userName = tools.get_user_by_token(token)["username"]
   item = item.dict(exclude_none=True, exclude_unset=True)
 
-  chk = tools.check_carousel_owner(username=userName, id=id)
-
   try:
     res = tools.replace_carousel_by_id(id=id, item=item)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
   return res
+
+
+#-----------------------
+@app.delete("/carousels/{id}", tags=["carousels"])
+async def api_carousels_delete(id:str, token:str = Depends(oauth2_scheme)):
+  
+  userName = tools.get_user_by_token(token)["username"]
+
+  try:
+    res = tools.delete_carousel_by_id(username=userName, id=id)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+  return {"_id": id}
 
 #--------------------------------------------
 @app.get("/images", tags=["images"])
@@ -256,6 +268,19 @@ async def api_image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
   res = await tools.add_image(file=file, username=username)
   
   return res
+
+#--------------------------------------------
+@app.delete("/image/{id}", tags=["images"])
+async def api_image_delete(id:str, token:str = Depends(oauth2_scheme)):
+
+  res = tools.get_user_by_token(token) 
+  username = res["username"]
+  try:
+    tools.delete_image_by_id(id=id, username=username)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+  return {"_id": id}
 
 #--------------------------------------------
 @app.get("/stream/{id}", tags=["images"])

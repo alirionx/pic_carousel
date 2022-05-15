@@ -190,7 +190,7 @@ async def add_image(file, username:str):
   thumbBuffer.seek(0)
 
   gridFsCli = create_gridfs_cli()
-  gridFsCli.put(
+  image_id = gridFsCli.put(
     imageBuffer, 
     filename=file.filename, 
     contentType=file.content_type, 
@@ -202,6 +202,7 @@ async def add_image(file, username:str):
     filename=file.filename, 
     contentType=file.content_type, 
     type="thumb", 
+    image_id=image_id,
     user_id=userId 
   )
   
@@ -254,6 +255,35 @@ async def get_image_byte(id:str, username:str):
   return res, contentType
 
 #--------------------------
+def delete_image_by_id(id:str, username:str):
+  picId = ObjectId(id)
+  userId = get_user_by_name(username=username, object_id=1)["_id"]
+
+  mongoCli = create_mongo_cli(cli_only=True)
+  mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
+  res = mongoDb["fs.files"].find_one({"user_id": userId, "_id": picId})
+  if not res:
+    raise Exception("Image with id '%s' not found or not allowed" %id)
+  else:
+    mongoDb["fs.files"].delete_one({"image_id": picId})
+    mongoDb["fs.files"].delete_one({"_id": picId})
+
+#---------------------------------------------------
+def check_carousel_owner(username:str, id:str):
+  mongoDb = create_mongo_cli()
+  userId = get_user_by_name(username=username, object_id=1)["_id"]
+
+  qry = {
+    "_id": ObjectId(id),
+    "user_id": ObjectId(userId)
+  }
+  print(qry)
+
+  res = mongoDb.carousels.find_one(qry)
+  # print(res)
+  return res
+
+#--------------------------
 def get_carousels(username:str, thumbs=False):
 
   userId = get_user_by_name(username=username, object_id=1)["_id"]
@@ -280,28 +310,40 @@ def add_carousel(item:dict, username:str):
   return res
 
 #--------------------------
-def replace_carousel_by_id(id:str, item:dict):
+def replace_carousel_by_id(username:str, id:str, item:dict):
+  
+  chk = check_carousel_owner(username=username, id=id)
+  if not chk:
+    raise Exception("Carousel with id '%s' not found or not allowed" %id)
+  
   mongoDb = create_mongo_cli()
-
   qry = {"_id": ObjectId(id)}
   mongoDb.carousels.replace_one(qry, item)
   
   return item
 
 #--------------------------
-def check_carousel_owner(username:str, id:str):
+def delete_carousel_by_id(username:str, id:str):
+  
+  chk = check_carousel_owner(username=username, id=id)
+  if not chk:
+    raise Exception("Carousel with id '%s' not found or not allowed" %id)
+  
   mongoDb = create_mongo_cli()
-  userId = get_user_by_name(username=username, object_id=1)["_id"]
-
-  qry = {
-    "_id": ObjectId(id),
-    "user_id": ObjectId(userId)
-  }
-  print(qry)
-
-  res = mongoDb.carousels.find_one(qry)
-  print(res)
+  res = mongoDb.carousels.delete_one({"_id": ObjectId(id)})
+  
   return res
+
+#--------------------------
+
+
+#--------------------------
+
+
+#--------------------------
+
+
+
 
 
 
