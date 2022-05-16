@@ -214,6 +214,14 @@ async def api_carousels_get(token:str = Depends(oauth2_scheme)):
   res = tools.get_carousels(id=id)
   return res
 
+#--------------------------------------------
+@app.get("/carousel/{id}", tags=["carousels"])
+async def api_carousel_get(id:str, token:str = Depends(oauth2_scheme)):
+  userId = tools.get_user_by_token(token)["_id"]
+
+  res = tools.get_carousel(id=id, user_id=userId)
+  return res
+
 #-----------------------
 @app.post("/carousels", tags=["carousels"])
 async def api_carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
@@ -229,14 +237,14 @@ async def api_carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
   return res
 
 #-----------------------
-@app.put("/carousels/{id}", tags=["carousels"])
+@app.put("/carousel/{id}", tags=["carousels"])
 async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_scheme)):
   
-  user_id = tools.get_user_by_token(token)["_id"]
+  userId = tools.get_user_by_token(token)["_id"]
   item = item.dict(exclude_none=True, exclude_unset=True)
 
   try:
-    res = tools.replace_carousel_by_id(id=id, user_id=user_id, item=item)
+    res = tools.replace_carousel_by_id(id=id, user_id=userId, item=item)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
@@ -247,10 +255,10 @@ async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_sc
 @app.delete("/carousels/{id}", tags=["carousels"])
 async def api_carousels_delete(id:str, token:str = Depends(oauth2_scheme)):
   
-  userName = tools.get_user_by_token(token)["username"]
+  userId = tools.get_user_by_token(token)["_id"]
 
   try:
-    res = tools.delete_carousel_by_id(username=userName, id=id)
+    res = tools.delete_carousel_by_id(user_id=userId, id=id)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
@@ -260,8 +268,8 @@ async def api_carousels_delete(id:str, token:str = Depends(oauth2_scheme)):
 @app.get("/images", tags=["images"])
 async def api_images_get(token:str = Depends(oauth2_scheme)):
   
-  user_id = tools.get_user_by_token(token)["_id"]
-  res = tools.get_images(user_id=user_id)
+  userId = tools.get_user_by_token(token)["_id"]
+  res = tools.get_images(user_id=userId)
   return res
 
 
@@ -280,20 +288,18 @@ async def api_image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
   if file.content_type not in imageTypesCompression.keys():
     raise HTTPException(status_code=400, detail="invalid file type. Please use '%s'" %imageTypesCompression.keys())
 
-  res = tools.get_user_by_token(token) 
-  username = res["username"]
-  res = await tools.add_image(file=file, username=username)
+  userId = tools.get_user_by_token(token)["_id"]
+  imageId = await tools.add_image(file=file, user_id=userId)
   
-  return res
+  return {"_id": imageId}
 
 #--------------------------------------------
 @app.delete("/image/{id}", tags=["images"])
 async def api_image_delete(id:str, token:str = Depends(oauth2_scheme)):
 
-  res = tools.get_user_by_token(token) 
-  username = res["username"]
+  userId = tools.get_user_by_token(token)["_id"]
   try:
-    tools.delete_image_by_id(id=id, username=username)
+    tools.delete_image_by_id(id=id, user_id=userId)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
