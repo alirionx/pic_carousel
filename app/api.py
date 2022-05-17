@@ -12,7 +12,7 @@ import jwt
 import time
 
 from app import helpers, settings, tools
-from app.models import User, UserPatch, UserMe, Password, Carousel
+from app.models import User, UserPatch, UserMe, Password, Carousel, CarouselPatch
 from app.models import imageTypesCompression, allowedImageLength
 
 #-Build the App-------------------------------------------------
@@ -218,8 +218,12 @@ async def api_carousels_get(token:str = Depends(oauth2_scheme)):
 @app.get("/carousel/{id}", tags=["carousels"])
 async def api_carousel_get(id:str, token:str = Depends(oauth2_scheme)):
   userId = tools.get_user_by_token(token)["_id"]
-
-  res = tools.get_carousel(id=id, user_id=userId)
+  
+  try:
+    res = tools.get_carousel(id=id, user_id=userId)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
   return res
 
 #-----------------------
@@ -250,6 +254,31 @@ async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_sc
 
   return res
 
+
+#--------------------------------------------
+@app.patch("/carousel/{id}", tags=["carousels"])
+async def api_user_patch(id:str, item: CarouselPatch, token:str = Depends(oauth2_scheme)):
+
+  userId = tools.get_user_by_token(token)["_id"]
+  try:
+    res = tools.get_carousel(id=id, user_id=userId)
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+  if item.images:
+    try:
+      tools.check_user_to_images(user_id=userId, images=item.images)
+    except Exception as e:
+      raise HTTPException(status_code=400, detail=str(e))
+
+  existingItem = Carousel(**res)
+  newItem = item.dict(exclude_none=True, exclude_unset=True)
+  updatedItem = existingItem.copy(update=newItem)
+  
+  dbItem = updatedItem.dict(exclude_none=True, exclude_unset=True)
+  item = tools.replace_carousel_by_id(id=id, item=dbItem, user_id=userId)
+
+  return item
 
 #-----------------------
 @app.delete("/carousels/{id}", tags=["carousels"])

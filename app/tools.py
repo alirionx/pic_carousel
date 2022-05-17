@@ -290,6 +290,20 @@ async def get_image_byte(id:str, user_id:str):
   return res, contentType
 
 #--------------------------
+def check_user_to_images(user_id:str, images:list):
+  usrId = ObjectId(user_id)
+
+  mongoCli = create_mongo_cli(cli_only=True)
+  mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
+  for img in images:
+    curPicId = ObjectId(img)
+    res = mongoDb["fs.files"].find_one({"type": "image", "user_id": usrId, "_id": curPicId})
+    if not res:
+      raise Exception("Image with id '%s' not found or not allowed" %img)
+
+  return True
+
+#--------------------------
 def delete_image_by_id(id:str, user_id:str):
   picId = ObjectId(id)
   usrId = ObjectId(user_id)
@@ -362,6 +376,9 @@ def replace_carousel_by_id(user_id:str, id:str, item:dict):
   if not chk:
     raise Exception("Carousel with id '%s' not found or not allowed" %id)
   
+  if "user_id" not in item:
+    item["user_id"] = ObjectId(user_id)
+
   mongoDb = create_mongo_cli()
   qry = {"_id": ObjectId(id)}
   mongoDb.carousels.replace_one(qry, item)

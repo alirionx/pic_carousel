@@ -31,6 +31,15 @@ class Carousel(BaseModel):
   description: str | None = None
   mode: Literal["fade", "slide"]
   timeout: int | None = 10
+  images: list | None = []
+
+class CarouselPatch(BaseModel):
+  name: constr(min_length=4) | None = None
+  state: Literal["private", "public", "disabled"] | None = None
+  description: str | None = None
+  mode: Literal["fade", "slide"] | None = None
+  timeout: int | None = None
+  images: list | None = None
   
 
 #-Further Definitions------------------------------
