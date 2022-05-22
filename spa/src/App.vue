@@ -26,25 +26,30 @@ export default {
 
   data: () => ({
     title: "Pic Carousel",
-    selectedTab: null
+    selectedTab: 0
   }),
 
   methods:{
     go_to_hash(lnk){
       location.hash = lnk;
+    },
+    set_tab_by_hash(){
+      let curHash = location.hash.replace("#","");
+      let defi = this.$store.state.menuDefi;
+      for(let idx in defi){
+        if(defi[idx].lnk === curHash){
+          setTimeout( ()=>{ this.selectedTab = parseInt(idx)}, 200); //EVIL!!!
+          // this.selectedTab = parseInt(idx);
+          break;
+        }
+      }
     }
   },
   mounted: function(){
-    // console.log(location.hash);
-    let curHash = location.hash.replace("#","");
-    let defi = this.$store.state.menuDefi;
-    for(let idx in defi){
-      if(defi[idx].lnk === curHash){
-        const callback = ()=>{ this.selectedTab = parseInt(idx);} 
-        setTimeout( callback, 500);
-        break;
-      }
-    }
+    this.set_tab_by_hash();
+  },
+  updated: function(){
+    
   }
 }
 </script>

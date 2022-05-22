@@ -38,7 +38,14 @@ async def api_root_get() -> dict:
 
 
 #--------------------------------------------
+@app.get("/auth", tags=["auth"])
+async def api_auth_get(token: str = Depends(oauth2_scheme)):
+  return {"Bearer": token}
+
+
+#--------------------------------------------
 @app.post("/token", tags=["auth"])
+@app.post("/auth", tags=["auth"])
 async def api_token_post(form_data: OAuth2PasswordRequestForm = Depends()):
   
   authRes = tools.check_auth(username=form_data.username, password=form_data.password)
