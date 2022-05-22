@@ -1,6 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import Carousels from '../views/Carousels.vue'
-import axios, { Axios } from 'axios'
 import store from '../store/index.js'
 
 const routes = [

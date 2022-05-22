@@ -8,7 +8,7 @@
         <v-tab 
           v-for="(item,idx) in $store.state.menuDefi" 
           :key="idx"
-          @click="go_to_hash(item.lnk)">{{item.txt}}</v-tab>
+          @click="go_to_hash(item)">{{item.txt}}</v-tab>
 
       </v-tabs>
     </v-app-bar>
@@ -30,8 +30,11 @@ export default {
   }),
 
   methods:{
-    go_to_hash(lnk){
-      location.hash = lnk;
+    go_to_hash(item){
+      if(item.func){
+        item.func();
+      }
+      location.hash = item.lnk;
     },
     set_tab_by_hash(){
       let curHash = location.hash.replace("#","");

@@ -3,7 +3,6 @@ import { createStore } from 'vuex'
 
 export default createStore({
   state: {
-    // bearer: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImRxdWlsaXR6c2NoIiwicm9sZSI6InVzZXIiLCJjcmVhdGVkIjoxNjUyOTkwMTM2LCJleHBpcmVzIjoxNzM5MzkwMTM2fQ.5V9wjTWxkwqT2NllatUV8vPZTRK26TRaQJ4F8LFOmW0",
     bearer: null,
     username: null,
     role: null,
@@ -19,21 +18,22 @@ export default createStore({
       {
         txt: "Users",
         lnk: "/users"
+      },
+      {
+        txt: "Logout",
+        func: ()=>{ localStorage.removeItem("bearer"); },
+        lnk: "/login"
       }
     ]
   },
   getters: {
   },
   mutations: {
-    set_bearer(bearer){
-      this.state.bearer = bearer;
-    },
-    reset_bearer(){
-      this.state.bearer = null;
-    }
+
   },
   actions: {
     check_bearer_state(context){
+      this.state.bearer = localStorage.getItem("bearer");
 
       return new Promise((resolve, reject) => {
         if(!this.state.bearer){
@@ -65,7 +65,12 @@ export default createStore({
     set_bearer(context, bearer){
       // context.commit('set_bearer', bearer)
       this.state.bearer = bearer;
+      localStorage.setItem("bearer", bearer);
     },
+    reset_bearer(){
+      this.state.bearer = null;
+      localStorage.removeItem("bearer")
+    }
 
   },
   modules: {
