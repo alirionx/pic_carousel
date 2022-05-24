@@ -1,4 +1,4 @@
-import axios from 'axios'
+// import axios from 'axios'
 import { createStore } from 'vuex'
 
 export default createStore({
@@ -6,6 +6,7 @@ export default createStore({
     bearer: null,
     username: null,
     role: null,
+    selectedTab: 0,
     menuDefi:[
       {
         txt: "Carousels",
@@ -21,7 +22,7 @@ export default createStore({
       },
       {
         txt: "Logout",
-        func: ()=>{ localStorage.removeItem("bearer"); },
+        act: "reset_bearer",
         lnk: "/login"
       }
     ]
@@ -34,6 +35,13 @@ export default createStore({
   actions: {
     check_bearer_state(context){
       this.state.bearer = localStorage.getItem("bearer");
+      
+      let payload;
+      if(this.state.bearer){
+        payload = JSON.parse(atob(this.state.bearer.split('.')[1]));
+        this.state.role = payload.role;
+      }
+      
 
       return new Promise((resolve, reject) => {
         if(!this.state.bearer){
@@ -41,7 +49,6 @@ export default createStore({
         }
         else{
           try {
-            const payload = JSON.parse(atob(this.state.bearer.split('.')[1]));
             // console.log(payload.expires);
             let now = Date.now() / 1000 | 0
             if(payload.expires > now){
@@ -62,13 +69,22 @@ export default createStore({
       })
     },
 
+    set_selected_tab(context, idx){
+      this.state.selectedTab = idx;
+    },
+
     set_bearer(context, bearer){
       // context.commit('set_bearer', bearer)
       this.state.bearer = bearer;
+      const payload = JSON.parse(atob(bearer.split('.')[1]));
+      this.state.role = payload.role;
       localStorage.setItem("bearer", bearer);
+
     },
-    reset_bearer(){
+    reset_bearer(context){
       this.state.bearer = null;
+      this.state.role = null;
+      this.state.selectedTab = 0;
       localStorage.removeItem("bearer")
     }
 

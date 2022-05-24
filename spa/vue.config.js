@@ -1,5 +1,6 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
+
   pluginOptions: {
     vuetify: {
 			// https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vuetify-loader
@@ -7,7 +8,7 @@ module.exports = defineConfig({
   },
   devServer: {
     proxy: {
-      '/api': {
+      '/users': {
         target: 'http://localhost:5000',
         //pathRewrite: {'^/api' : ''}
       },

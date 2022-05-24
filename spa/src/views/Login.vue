@@ -76,7 +76,7 @@ export default defineComponent({
       .then(response => { 
         //this.loader = false;
         // console.log(response.data.access_token);
-        this.$store.dispatch("set_bearer", response.data.access_token).then( console.log(this.$store.state.bearer))
+        this.$store.dispatch("set_bearer", response.data.access_token)//.then( console.log(this.$store.state.bearer))
         this.$router.push('/')
       })
       .catch(error => {
