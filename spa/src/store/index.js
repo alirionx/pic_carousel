@@ -42,7 +42,6 @@ export default createStore({
         this.state.role = payload.role;
       }
       
-
       return new Promise((resolve, reject) => {
         if(!this.state.bearer){
           reject("no valid login")

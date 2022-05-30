@@ -14,7 +14,7 @@ class envConfigMap:
     self.JWT_TOKEN_VALIDITY_TIME_IN_H = 24
     
     self.MONGODB_HOST = "localhost"
-    self.MONGODB_PORT = 27017
+    self.MONGODB_PORT = 27018
     self.MONGODB_DBNAME = "pic_carousel"
     self.MONGODB_GRIDFSDB = "pc_images"
     self.MONGODB_USER = "ANON"
