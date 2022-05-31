@@ -1,18 +1,43 @@
 <template>
   <v-app>
-    <v-sheet elevation="6 mb-4" class="purple darken-3" app>
-      <v-tabs
-        class="px-2"
-        background-color="purple darken-3"
-        center-active
-        dark
-        font-white
-        right
-      >
-        <v-tab v-for="(tab,idx) in filtered_tabs()" :key="idx" @click="go_to_lnk(tab)">{{tab.txt}}</v-tab>
-      </v-tabs>
-  
-    </v-sheet>
+    <v-container dark class="purple darken-3 pa-0 elevation-4" fluid app>
+      <v-row no-gutters>
+        <v-col cols="4">
+          <v-sheet class="purple darken-3 title py-2 px-6 " dark >
+            PicCarousel - Example App
+          </v-sheet>
+        </v-col>
+
+        <v-col >
+          <v-tabs
+            v-model="$store.state.active_tab"
+            class="px-0 "
+            background-color="purple darken-3"
+            center-active
+            dark
+            right
+          >
+            <v-tab v-for="(tab,idx) in $store.getters.filtered_tabs" :key="idx" @click="go_to_lnk(tab)">{{tab.txt}}</v-tab>
+          </v-tabs>
+        </v-col>
+
+      </v-row>
+    </v-container>
+
+    <v-dialog v-model="$store.state.err" width="500">
+      <v-card>
+        <v-card-title class="text-h5 white--text red darken-4" >Error</v-card-title>
+        <v-card-text  class="subtitle-1 pt-4">{{$store.state.err_msg}}</v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="reset_err">
+            Ok
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
 
     <v-main class="ma-2">
       <router-view/>
@@ -22,55 +47,16 @@
 
 <script>
 
+import { mapMutations } from 'vuex'
+
 export default {
   name: 'App',
 
   data: () => ({
     msg: "Hallo Welt",
-    tabs:[
-      {
-        txt: "Home",
-        lnk: "/",
-        roles: []
-      },
-      {
-        txt: "Carousels",
-        lnk: "/carousels",
-        roles: ["user", "admin"]
-      },
-      {
-        txt: "Users",
-        lnk: "/users",
-        roles: ["admin"]
-      },
-      {
-        txt: "Login",
-        lnk: "/login",
-        roles: [null]
-      },
-      {
-        txt: "Logout",
-        func: "logout",
-        roles: ["user", "admin"]
-      }
-    ]
   }),
-  methods:{
-
-    filtered_tabs(){
-      let tabs = []
-      for(let idx in this.tabs){
-        if(!this.tabs[idx].roles.length){
-          tabs.push(this.tabs[idx])
-          continue
-        }
-        else if( this.tabs[idx].roles.includes(this.$store.state.role) ){
-          tabs.push(this.tabs[idx])
-          continue
-        }
-      }
-      return tabs
-    },  
+  methods:{  
+    ...mapMutations([ "set_err", "reset_err" ]),
 
     go_to_lnk(tab){
       if(tab.lnk){
@@ -81,6 +67,17 @@ export default {
       }
     },
 
+
+  },
+  mounted: function(){
+    // this.update_active_hash()
+    this.$store.dispatch("set_active_tab")
+  },
+
+  updated: function(){
+    
   }
+
+  
 };
 </script>

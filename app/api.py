@@ -33,6 +33,7 @@ def check_admin(token):
 
 #-The Routes----------------------------------------------------
 @app.get("/", tags=["root"])
+@app.get("/api", tags=["root"])
 async def api_root_get() -> dict:
   return {"message": "Welcome to the API of the Pic Carousel App"}
 
@@ -66,7 +67,7 @@ async def api_token_post(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 #--------------------------------------------
-@app.get("/users", tags=["users"])
+@app.get("/api/users", tags=["users"])
 async def api_users_get(token: str = Depends(oauth2_scheme)):
   check_admin(token)
 
@@ -75,7 +76,7 @@ async def api_users_get(token: str = Depends(oauth2_scheme)):
 
 
 #--------------------------------------------
-@app.post("/users", tags=["users"])
+@app.post("/api/users", tags=["users"])
 async def api_users_post(item: User, token: str = Depends(oauth2_scheme)):
   check_admin(token)
 
@@ -89,7 +90,7 @@ async def api_users_post(item: User, token: str = Depends(oauth2_scheme)):
 
 
 #--------------------------------------------
-@app.get("/user/me", tags=["users"])
+@app.get("/api/user/me", tags=["users"])
 async def api_user_me_get(token: str = Depends(oauth2_scheme)):
 
   res = tools.get_user_by_token(token)
@@ -97,7 +98,7 @@ async def api_user_me_get(token: str = Depends(oauth2_scheme)):
 
 
 #--------------------------------------------
-@app.get("/user/{id}", tags=["users"])
+@app.get("/api/user/{id}", tags=["users"])
 async def api_user_get(id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
@@ -108,7 +109,7 @@ async def api_user_get(id:str, token:str = Depends(oauth2_scheme)):
   return res
 
 #--------------------------------------------
-@app.put("/user/me", tags=["users"])
+@app.put("/api/user/me", tags=["users"])
 async def api_me_put(item: UserMe, token:str = Depends(oauth2_scheme)):
   
   res = tools.get_user_by_token(jwt_str=token)
@@ -128,7 +129,7 @@ async def api_me_put(item: UserMe, token:str = Depends(oauth2_scheme)):
 
 
 #--------------------------------------------
-@app.put("/user/{id}", tags=["users"])
+@app.put("/api/user/{id}", tags=["users"])
 async def api_user_put(item: User, id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
@@ -148,7 +149,7 @@ async def api_user_put(item: User, id:str, token:str = Depends(oauth2_scheme)):
 
 
 #--------------------------------------------
-@app.patch("/user/{id}", tags=["users"])
+@app.patch("/api/user/{id}", tags=["users"])
 async def api_user_patch(item: UserPatch, id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
   
@@ -167,7 +168,7 @@ async def api_user_patch(item: UserPatch, id:str, token:str = Depends(oauth2_sch
 
 
 #--------------------------------------------
-@app.delete("/user/{id}", tags=["users"])
+@app.delete("/api/user/{id}", tags=["users"])
 async def api_user_delete(id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
@@ -179,7 +180,7 @@ async def api_user_delete(id:str, token:str = Depends(oauth2_scheme)):
 
 
 #--------------------------------------------
-@app.put("/user/password/me", tags=["users"])
+@app.put("/api/user/password/me", tags=["users"])
 async def api_user_patch(item: Password, token:str = Depends(oauth2_scheme)):
 
   res = tools.get_user_by_token(jwt_str=token)
@@ -198,7 +199,7 @@ async def api_user_patch(item: Password, token:str = Depends(oauth2_scheme)):
 
 
 #--------------------------------------------
-@app.put("/user/password/{id}", tags=["users"])
+@app.put("/api/user/password/{id}", tags=["users"])
 async def api_user_patch(item: Password, id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
@@ -215,14 +216,14 @@ async def api_user_patch(item: Password, id:str, token:str = Depends(oauth2_sche
 
 
 #--------------------------------------------
-@app.get("/carousels", tags=["carousels"])
+@app.get("/api/carousels", tags=["carousels"])
 async def api_carousels_get(token:str = Depends(oauth2_scheme)):
   id = tools.get_user_by_token(token)["_id"]
   res = tools.get_carousels(id=id)
   return res
 
 #--------------------------------------------
-@app.get("/carousel/{id}", tags=["carousels"])
+@app.get("/api/carousel/{id}", tags=["carousels"])
 async def api_carousel_get(id:str, token:str = Depends(oauth2_scheme)):
   userId = tools.get_user_by_token(token)["_id"]
   
@@ -234,7 +235,7 @@ async def api_carousel_get(id:str, token:str = Depends(oauth2_scheme)):
   return res
 
 #-----------------------
-@app.post("/carousels", tags=["carousels"])
+@app.post("/api/carousels", tags=["carousels"])
 async def api_carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
   
   user_id = tools.get_user_by_token(token)["_id"]
@@ -248,7 +249,7 @@ async def api_carousels_post(item:Carousel, token:str = Depends(oauth2_scheme)):
   return res
 
 #-----------------------
-@app.put("/carousel/{id}", tags=["carousels"])
+@app.put("/api/carousel/{id}", tags=["carousels"])
 async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_scheme)):
   
   userId = tools.get_user_by_token(token)["_id"]
@@ -263,7 +264,7 @@ async def api_carousels_put(id:str, item:Carousel, token:str = Depends(oauth2_sc
 
 
 #--------------------------------------------
-@app.patch("/carousel/{id}", tags=["carousels"])
+@app.patch("/api/carousel/{id}", tags=["carousels"])
 async def api_user_patch(id:str, item: CarouselPatch, token:str = Depends(oauth2_scheme)):
 
   userId = tools.get_user_by_token(token)["_id"]
@@ -288,7 +289,7 @@ async def api_user_patch(id:str, item: CarouselPatch, token:str = Depends(oauth2
   return item
 
 #-----------------------
-@app.delete("/carousels/{id}", tags=["carousels"])
+@app.delete("/api/carousels/{id}", tags=["carousels"])
 async def api_carousels_delete(id:str, token:str = Depends(oauth2_scheme)):
   
   userId = tools.get_user_by_token(token)["_id"]
@@ -301,7 +302,7 @@ async def api_carousels_delete(id:str, token:str = Depends(oauth2_scheme)):
   return {"_id": id}
 
 #--------------------------------------------
-@app.get("/images", tags=["images"])
+@app.get("/api/images", tags=["images"])
 async def api_images_get(token:str = Depends(oauth2_scheme)):
   
   userId = tools.get_user_by_token(token)["_id"]
@@ -310,7 +311,7 @@ async def api_images_get(token:str = Depends(oauth2_scheme)):
 
 
 #-------------
-@app.get("/thumbs", tags=["images"])
+@app.get("/api/thumbs", tags=["images"])
 async def api_thumbs_get(token:str = Depends(oauth2_scheme)):
   
   user_id = tools.get_user_by_token(token)["_id"]
@@ -318,7 +319,7 @@ async def api_thumbs_get(token:str = Depends(oauth2_scheme)):
   return res
 
 #--------------------------------------------
-@app.post("/image", tags=["images"])
+@app.post("/api/image", tags=["images"])
 async def api_image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
   
   if file.content_type not in imageTypesCompression.keys():
@@ -330,7 +331,7 @@ async def api_image_post(file: UploadFile, token:str = Depends(oauth2_scheme)):
   return {"_id": imageId}
 
 #--------------------------------------------
-@app.delete("/image/{id}", tags=["images"])
+@app.delete("/api/image/{id}", tags=["images"])
 async def api_image_delete(id:str, token:str = Depends(oauth2_scheme)):
 
   userId = tools.get_user_by_token(token)["_id"]
@@ -342,7 +343,7 @@ async def api_image_delete(id:str, token:str = Depends(oauth2_scheme)):
   return {"_id": id}
 
 #--------------------------------------------
-@app.get("/stream/{id}", tags=["images"])
+@app.get("/api/stream/{id}", tags=["images"])
 async def api_stream_get(id:str, token:str = Depends(oauth2_scheme)):
 
   try:

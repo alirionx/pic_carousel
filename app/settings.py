@@ -1,6 +1,7 @@
 import os
 from types import SimpleNamespace
 
+
 class envConfigMap:
   def __init__(self):
 
@@ -23,7 +24,7 @@ class envConfigMap:
     self.MIN_PWD_LEN = 5
 
     #---------------------------------------
-    for key, val in vars(self).items():
+    for key, val in self.__dict__.items():
       if key.startswith("__"): 
         continue
       if os.environ.get(key):
