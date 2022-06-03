@@ -2,16 +2,7 @@
   <div>
     <v-card class="ma-6 mt-10 elevation-4">
       <!-- <v-card-title class="purple darken-3 white--text py-1 px-4 subtitle-1 ">Users -->
-      <v-card-title class="py-2 px-3 text-h7 ">Users
-        <!-- <v-sheet class="pr-16">Users</v-sheet>
-        <v-text-field
-          v-model="search"
-          append-icon="mdi-magnify"
-          label="Search"
-          single-line
-          hide-details
-        ></v-text-field> -->
-      </v-card-title>
+      <v-card-title class="py-2 px-3 text-h7 ">Users</v-card-title>
       <v-data-table
         :headers="tableHeaders"
         :items="usersData"
@@ -49,7 +40,6 @@
         <v-card-text>
             <v-text-field class="pa-3 mx-8 mt-10" required label="Username" v-model="editData.username" ></v-text-field>
             <v-select class="pa-3 mx-8" required label="Role" v-model="editData.role" :items="ddRoles"></v-select>
-            <!-- <v-text-field class="pa-3 mx-8" label="Role" v-model="editData.role" ></v-text-field> -->
             <v-text-field class="pa-3 mx-8" required label="Email" v-model="editData.email" type="email"></v-text-field>
             <v-text-field class="pa-3 mx-8" label="Firstname" v-model="editData.firstname" ></v-text-field>
             <v-text-field class="pa-3 mx-8" required label="Lastname" v-model="editData.lastname" ></v-text-field>
@@ -57,10 +47,7 @@
 
         </form>
       </v-card>
-      
-
     </v-dialog>
-  
   </div>
 </template>
 
@@ -83,7 +70,7 @@
         { text: 'Lastname', value: 'lastname' },
         { text: 'act', value: 'act' },
       ],
-      search:null,
+      search: null,
       usersData: [],
     
       editData:{
@@ -148,19 +135,11 @@
         }
         this.dialog = false
         this.dialogIdx = null
-        // let tmpDict = {}
-        // for(var prop in this.editData){
-        //   tmpDict[prop] = null
-        // }
-        // this.editData = {...tmpDict}
         this.resetData = {}
       },
 
 
-
       submit_user_edit(){
-        // console.log(this.dialogIdx, this.editData)
-
         axios.put(
           "/api/user/"+this.editData._id, 
           this.editData,
@@ -174,8 +153,6 @@
           this.set_err(err.message)
           this.close_dialog(true)
         })
-     
-          
       },
 
     },
@@ -184,6 +161,7 @@
     }
   }
 </script>
+
 
 <style >
 .v-data-table th {
