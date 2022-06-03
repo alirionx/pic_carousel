@@ -1,38 +1,67 @@
 <template>
+  <div>
     <v-card class="ma-6 mt-10 elevation-4">
-    <v-card-title class="purple darken-3 white--text py-1 px-4 subtitle-1 ">Users
-      <!-- <v-sheet class="pr-16">Users</v-sheet>
-      <v-text-field
-        v-model="search"
-        append-icon="mdi-magnify"
-        label="Search"
-        single-line
-        hide-details
-      ></v-text-field> -->
-    </v-card-title>
-    <v-data-table
-      :headers="tableHeaders"
-      :items="tableData"
-      :search="search"
-    >
-      <template v-slot:item.act>
-        <v-menu bottom left >
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn light icon v-bind="attrs" v-on="on" >
-                <v-icon>mdi-dots-vertical</v-icon>
-              </v-btn>
-            </template>
+      <!-- <v-card-title class="purple darken-3 white--text py-1 px-4 subtitle-1 ">Users -->
+      <v-card-title class="py-2 px-3 text-h7 ">Users
+        <!-- <v-sheet class="pr-16">Users</v-sheet>
+        <v-text-field
+          v-model="search"
+          append-icon="mdi-magnify"
+          label="Search"
+          single-line
+          hide-details
+        ></v-text-field> -->
+      </v-card-title>
+      <v-data-table
+        :headers="tableHeaders"
+        :items="usersData"
+        :search="search"
+      >
+        <template v-slot:item.act="{item}">
+          <v-btn light icon @click="open_dialog(usersData.indexOf(item))">
+            <v-icon>mdi-pencil</v-icon>
+          </v-btn>
+        </template>
+      
+      </v-data-table>
+    </v-card>
+  
+    <v-dialog
+      v-model="dialog"
+      fullscreen
+      hide-overlay
+      transition="dialog-bottom-transition"
+      scrollable
+      >
+      <v-card tile>
+        <form @submit.prevent="submit_user_edit">
+        <v-toolbar flat dark color="purple darken-3" >
+          <v-btn icon dark @click="close_dialog(cancel=true)" type="button">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          <v-toolbar-title>User Settings</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-toolbar-items>
+            <v-btn icon dark type="submit">Save</v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
 
-            <v-list>
-              <v-list-item v-for="(act, idx) in acts" :key="idx" @click="call_act(idx)">
-                <v-list-item-title>{{ act.title }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-      </template>
-    
-    </v-data-table>
-  </v-card>
+        <v-card-text>
+            <v-text-field class="pa-3 mx-8 mt-10" required label="Username" v-model="editData.username" ></v-text-field>
+            <v-select class="pa-3 mx-8" required label="Role" v-model="editData.role" :items="ddRoles"></v-select>
+            <!-- <v-text-field class="pa-3 mx-8" label="Role" v-model="editData.role" ></v-text-field> -->
+            <v-text-field class="pa-3 mx-8" required label="Email" v-model="editData.email" type="email"></v-text-field>
+            <v-text-field class="pa-3 mx-8" label="Firstname" v-model="editData.firstname" ></v-text-field>
+            <v-text-field class="pa-3 mx-8" required label="Lastname" v-model="editData.lastname" ></v-text-field>
+        </v-card-text>
+
+        </form>
+      </v-card>
+      
+
+    </v-dialog>
+  
+  </div>
 </template>
 
 
@@ -54,13 +83,37 @@
         { text: 'Lastname', value: 'lastname' },
         { text: 'act', value: 'act' },
       ],
-      tableData: [],
       search:null,
-      acts: [
-        { title: "edit" },
-        { title: "set password" },
-        { title: "delete" }
+      usersData: [],
+    
+      editData:{
+        _id: null,
+        username: null,
+        role: null,
+        email: null,
+        firstname: null,
+        lastname: null
+      },
+      resetData:{},
+
+      ddRoles:[
+        {
+          text: "Administrator",
+          value: "admin"
+        },
+        {
+          text: "User",
+          value: "user"
+        },
+        {
+          text: "Penner",
+          value: "penner"
+        }
       ],
+      
+      dialog: false,
+      dialogIdx: null
+
     }),
     components: {
       
@@ -69,11 +122,10 @@
       ...mapMutations([ "set_err", "reset_err" ]),
 
       call_users_data(){
-        let headers = {headers: { Authorization: `Bearer ${this.$store.state.bearer}` }}
-        axios.get("/api/users", headers)
+        axios.get("/api/users", this.$store.getters.create_bearer_auth_header)
         .then((res)=>{
           // console.log(res.data)
-          this.tableData = res.data
+          this.usersData = res.data
 
         })
         .catch((err)=>{
@@ -82,10 +134,50 @@
         })
       },
 
-      call_act(idx){
-        console.log(idx)
-        // console.log(act.title + ':', this.tableData[idx].username)
-      }
+      open_dialog(idx){
+        this.dialog = true
+        this.dialogIdx = idx
+        this.editData = this.usersData[idx]
+        this.resetData = {...this.usersData[idx]}
+      },
+      close_dialog(cancel=false){
+        if(cancel){
+          for(let prop in this.resetData){
+            this.editData[prop] = this.resetData[prop]
+          }
+        }
+        this.dialog = false
+        this.dialogIdx = null
+        // let tmpDict = {}
+        // for(var prop in this.editData){
+        //   tmpDict[prop] = null
+        // }
+        // this.editData = {...tmpDict}
+        this.resetData = {}
+      },
+
+
+
+      submit_user_edit(){
+        // console.log(this.dialogIdx, this.editData)
+
+        axios.put(
+          "/api/user/"+this.editData._id, 
+          this.editData,
+          this.$store.getters.create_bearer_auth_header
+        )
+        .then((res)=>{
+          console.log(res.status)
+          this.close_dialog()
+        })
+        .catch((err)=>{
+          this.set_err(err.message)
+          this.close_dialog(true)
+        })
+     
+          
+      },
+
     },
     mounted: function(){
       this.call_users_data()
@@ -97,5 +189,8 @@
 .v-data-table th {
   padding-top:30px !important;
   font-size: 14px !important;
+}
+.v-data-table tr:hover {
+  background-color: transparent !important;
 }
 </style>

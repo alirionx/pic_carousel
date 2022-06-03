@@ -69,6 +69,10 @@ export default new Vuex.Store({
 
     get_tab_by_lnk: (state) => (lnk)=>{
       return state.tabs.find(tab => tab.lnk === lnk) //AAAAALLLLLTER
+    },
+
+    create_bearer_auth_header(state){
+      return {headers: { Authorization: `Bearer ${state.bearer}` }}
     }
 
   },
