@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-card class="ma-6 mt-10 elevation-4">
+    <v-card class="ma-6 mt-10 pa-4 elevation-6">
       <!-- <v-card-title class="purple darken-3 white--text py-1 px-4 subtitle-1 ">Users -->
       <v-card-title class="py-2 px-3 text-h7 ">Users</v-card-title>
       <v-data-table
@@ -68,7 +68,7 @@
         { text: 'Email', value: 'email' },
         { text: 'Firstname', value: 'firstname' },
         { text: 'Lastname', value: 'lastname' },
-        { text: 'act', value: 'act' },
+        { text: 'Action', value: 'act' },
       ],
       search: null,
       usersData: [],
@@ -167,6 +167,9 @@
 .v-data-table th {
   padding-top:30px !important;
   font-size: 14px !important;
+}
+.v-data-table td {
+  font-size: 15px !important;
 }
 .v-data-table tr:hover {
   background-color: transparent !important;
