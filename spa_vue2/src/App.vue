@@ -31,7 +31,7 @@
         <v-divider></v-divider>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="reset_err">
+          <v-btn color="purple darken-4" text @click="reset_err">
             Ok
           </v-btn>
         </v-card-actions>

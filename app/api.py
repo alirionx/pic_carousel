@@ -181,7 +181,7 @@ async def api_user_delete(id:str, token:str = Depends(oauth2_scheme)):
 
 #--------------------------------------------
 @app.put("/api/user/password/me", tags=["users"])
-async def api_user_patch(item: Password, token:str = Depends(oauth2_scheme)):
+async def api_me_password_put(item: Password, token:str = Depends(oauth2_scheme)):
 
   res = tools.get_user_by_token(jwt_str=token)
   id = res["_id"]
@@ -200,7 +200,7 @@ async def api_user_patch(item: Password, token:str = Depends(oauth2_scheme)):
 
 #--------------------------------------------
 @app.put("/api/user/password/{id}", tags=["users"])
-async def api_user_patch(item: Password, id:str, token:str = Depends(oauth2_scheme)):
+async def api_user_password_put(item: Password, id:str, token:str = Depends(oauth2_scheme)):
   check_admin(token)
 
   password = item.password.get_secret_value()
