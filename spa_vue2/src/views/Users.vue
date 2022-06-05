@@ -90,12 +90,14 @@
             dark
             color="purple darken-3" 
             class="mx-4"
+            min-width="140"
             @click="dialogPassword = !dialogPassword"
             >Reset Password</v-btn>
           <v-btn 
             small
             dark
             color="blue-grey darken-4" 
+            min-width="140"
             @click="dialogDelete = !dialogDelete"
             class="mx-4">Delete User</v-btn>
         </v-card-text>
@@ -294,7 +296,7 @@
           this.close_dialog_user()
           return
         }
-        
+
         let met = "post"
         let url = "/api/users"
         if(this.editData._id){

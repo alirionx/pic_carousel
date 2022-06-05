@@ -28,6 +28,13 @@ const routes = [
     }
   },
   {
+    path: '/images',
+    name: 'images',
+    component: function () {
+      return import(/* webpackChunkName: "about" */ '../views/Images.vue')
+    }
+  },
+  {
     path: '/users',
     name: 'Users',
     component: function () {

@@ -344,11 +344,13 @@ async def api_image_delete(id:str, token:str = Depends(oauth2_scheme)):
 
 #--------------------------------------------
 @app.get("/api/stream/{id}", tags=["images"])
-async def api_stream_get(id:str, token:str = Depends(oauth2_scheme)):
+async def api_stream_get(id:str):
+# async def api_stream_get(id:str, token:str = Depends(oauth2_scheme)):
 
   try:
-    user_id = tools.get_user_by_token(token)["_id"]
-    res, contentType = await tools.get_image_byte(id=id, user_id=user_id)
+    # user_id = tools.get_user_by_token(token)["_id"]
+    # res, contentType = await tools.get_image_byte(id=id, user_id=user_id)
+    res, contentType = await tools.get_image_byte(id=id)
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 

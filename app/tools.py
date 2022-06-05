@@ -262,7 +262,7 @@ def get_images(user_id:str, thumbs=False):
   mongoCli = create_mongo_cli(cli_only=True)
   mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
   
-  qry = {"user_id": ObjectId(user_id)}
+  qry = {"user_id": ObjectId(user_id), "type": imgType}
   res = mongoDb["fs.files"].find(qry)
   resList = []
   for item in res:
@@ -273,11 +273,12 @@ def get_images(user_id:str, thumbs=False):
 
 
 #--------------------------
-async def get_image_byte(id:str, user_id:str):
+async def get_image_byte(id:str, user_id:str=None):
 
   mongoCli = create_mongo_cli(cli_only=True)
   mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
-  chk = mongoDb["fs.files"].find_one({"user_id": ObjectId(user_id), "_id":  ObjectId(id)})
+  # chk = mongoDb["fs.files"].find_one({"user_id": ObjectId(user_id), "_id":  ObjectId(id)})
+  chk = mongoDb["fs.files"].find_one({"_id":  ObjectId(id)})
   if not chk:
     raise Exception("Image with id '%s' not found or not allowed" %id)
   else:

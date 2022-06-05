@@ -23,6 +23,12 @@ export default new Vuex.Store({
         auth: false
       },
       {
+        txt: "Images",
+        lnk: "/images",
+        roles: ["user", "admin"],
+        auth: true
+      },
+      {
         txt: "Carousels",
         lnk: "/carousels",
         roles: ["user", "admin"],
