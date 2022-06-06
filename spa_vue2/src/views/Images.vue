@@ -1,6 +1,23 @@
 <template>
-  <div class="text-center">
+  <div class="text-center" >
+    <!-- <v-sheet v-if="!streamReady" height="40vh">
+      <v-row
+        class="fill-height ma-0"
+        align="center"
+        justify="center"
+      >
+        <v-progress-circular
+          indeterminate
+          color="purple"
+          size="150"
+        ></v-progress-circular>
+      </v-row>
+
+    </v-sheet> -->
     
+
+  <!-- <div v-if="streamReady"> -->
+  <div>
     <!-- --------------------------------------------------------- -->
     <v-container class="text-center my-4">
       <v-btn 
@@ -19,6 +36,14 @@
         min-width="100"
         @click="dialogDelete = !dialogDelete"
         >Delete</v-btn>
+      <v-btn 
+        v-if="selectedImages.length"
+        dark
+        small
+        class="purple darken-4 mx-4"
+        min-width="100"
+        @click="selectedImages=[]"
+        >un-select</v-btn>
     </v-container>
 
     <!-- --------------------------------------------------------- -->
@@ -36,22 +61,9 @@
         @click="switch_selected(idx)"
       >
         <v-img
-          :src="get_stream_url(idx)"
+          :src="'data:'+thumb.contentType+';base64,'+thumb.b64Data"
           contain
-        >
-          <template v-slot:placeholder>
-            <v-row
-              class="fill-height ma-0"
-              align="center"
-              justify="center"
-            >
-              <v-progress-circular
-                indeterminate
-                color="purple"
-              ></v-progress-circular>
-            </v-row>
-          </template>
-        </v-img>
+        ></v-img>
       </v-sheet>
     </v-hover>
   
@@ -88,6 +100,7 @@
 
   <!-- --------------------------------------------------------- -->
   </div>
+  </div>
 </template>
 
 
@@ -102,6 +115,8 @@
       title: "Images",
       streamBase: "/api/stream/",
       data:[],
+      streamReady:false,
+      // streamTmpUrls:{},
       selectedImages: [],
       acts:[
         {
@@ -119,22 +134,17 @@
     },
     methods:{
       ...mapMutations([ "set_err", "reset_err" ]),
-
+    
       call_thumbs(){
-        axios.get( "/api/thumbs", this.$store.getters.create_bearer_auth_header)
+        axios.get( "/api/thumbs?b64_data=yes", this.$store.getters.create_bearer_auth_header)
         .then((res)=>{
-          console.log(res.data)
+          // console.log(res.data)
           this.data = res.data
         })
         .catch((err)=>{
           // console.log(err.message)
           this.set_err(err.message)
         })
-      },
-
-      get_stream_url(idx){
-        let url = this.streamBase + this.data[idx]._id
-        return url
       },
 
       is_selected(idx){
@@ -184,5 +194,6 @@
     mounted: function(){
       this.call_thumbs()
     }
+    
   }
 </script>

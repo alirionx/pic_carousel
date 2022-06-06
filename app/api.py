@@ -7,6 +7,8 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import StreamingResponse
 
+# from fastapi.middleware.cors import CORSMiddleware
+
 from io import BytesIO
 import jwt
 import time
@@ -17,6 +19,17 @@ from app.models import imageTypesCompression, allowedImageLength
 
 #-Build the App-------------------------------------------------
 app = FastAPI()
+# origins = [
+#   "http://127.0.0.1:5500",
+# ]
+# app.add_middleware(
+#   CORSMiddleware,
+#   allow_origins=origins,
+#   allow_credentials=True,
+#   allow_methods=["*"],
+#   allow_headers=["*"],
+# )
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 #-Initial Fuctions for App Prep---------------------------------
@@ -312,10 +325,21 @@ async def api_images_get(token:str = Depends(oauth2_scheme)):
 
 #-------------
 @app.get("/api/thumbs", tags=["images"])
-async def api_thumbs_get(token:str = Depends(oauth2_scheme)):
+async def api_thumbs_get(b64_data:str="false", token:str = Depends(oauth2_scheme)):
   
+  #--------------
   user_id = tools.get_user_by_token(token)["_id"]
   res = tools.get_images(user_id=user_id, thumbs=True)
+
+  #--------------
+  argsOk = ["true", "1", "yes"] 
+  if str(b64_data).lower() in argsOk:
+    for idx, item in enumerate(res):
+      b64Res, contentType = await tools.get_image_byte(id=item['_id'])
+      b64Str = base64.b64encode(b64Res).decode()
+      # b64HtmlSrc = "data:%s;base64,%s" %(contentType, b64Str) #Das solltest du in JS lösen, da wo es hingehört!
+      res[idx]["b64Data"] = b64Str
+      
   return res
 
 #--------------------------------------------

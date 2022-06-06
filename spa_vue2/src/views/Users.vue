@@ -10,9 +10,12 @@
           <v-col class="text-right">
             <v-btn 
               small
+              fab
               class="purple darken-4 white--text"
               @click="dialogUser = !dialogUser"
-            >add</v-btn>
+            >
+              <v-icon dark>mdi-plus</v-icon>
+            </v-btn>
           </v-col>
           
         </v-row>
