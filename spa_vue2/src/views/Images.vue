@@ -1,49 +1,43 @@
 <template>
   <div class="text-center" >
-    <!-- <v-sheet v-if="!streamReady" height="40vh">
-      <v-row
-        class="fill-height ma-0"
-        align="center"
-        justify="center"
-      >
-        <v-progress-circular
-          indeterminate
-          color="purple"
-          size="150"
-        ></v-progress-circular>
-      </v-row>
 
-    </v-sheet> -->
-    
-
-  <!-- <div v-if="streamReady"> -->
-  <div>
     <!-- --------------------------------------------------------- -->
     <v-container class="text-center my-4">
       <v-btn 
         dark
         small
-        class="purple darken-4 mx-4"
+        class="purple darken-3 mx-4"
         min-width="100"
         @click="dialogUpload = !dialogUpload"
         >Upload</v-btn>
 
       <v-btn 
-        v-if="selectedImages.length"
+        v-if="data.length"
         dark
         small
-        class="purple darken-4 mx-4"
+        class="purple darken-3 mx-4"
         min-width="100"
-        @click="dialogDelete = !dialogDelete"
-        >Delete</v-btn>
+        @click="selected_all_images"
+        >select-all</v-btn>
+
       <v-btn 
         v-if="selectedImages.length"
         dark
         small
-        class="purple darken-4 mx-4"
+        class="purple darken-3 mx-4"
         min-width="100"
         @click="selectedImages=[]"
         >un-select</v-btn>
+
+      <v-btn 
+        v-if="selectedImages.length"
+        dark
+        small
+        class="purple darken-3 mx-4"
+        min-width="100"
+        @click="dialogDelete = !dialogDelete"
+        >Delete</v-btn>
+
     </v-container>
 
     <!-- --------------------------------------------------------- -->
@@ -72,13 +66,29 @@
       v-model="dialogDelete"
       max-width="500px"
     >
-      <v-card class="pb-6">
+      <v-card class="">
         <v-card-title class="purple darken-3 white--text mb-6">
           Delete selected ({{selectedImages.length}}) images?
         </v-card-title>
+
+        <v-sheet class="ma-12" v-if="loader">
+          <v-row
+            class="fill-height"
+            align="center"
+            justify="center"
+          >
+            <v-progress-circular
+              indeterminate
+              color="purple"
+              size="80"
+            ></v-progress-circular>
+          </v-row>
+        </v-sheet>
+
         <v-card-actions>
           <v-container class="text-center">
             <v-btn
+              v-if="!loader"
               dark 
               class="purple darken-3 mx-4" 
               min-width="120"
@@ -91,15 +101,69 @@
               min-width="120"
               type="button"
               @click="dialogDelete = !dialogDelete"
-            >Cancel</v-btn>
+            >Close</v-btn>
           </v-container>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- -------------------------------------------------- -->
+    <v-dialog
+      v-model="dialogUpload"
+      max-width="500px"
+    >
+      <v-card class="">
+        <v-card-title class="purple darken-3 white--text mb-2">
+          Upload Images
+        </v-card-title>
+        <v-card-text class="pt-6" v-if="!loader">
+          <v-file-input
+            v-model="uploadList"
+            small-chips
+            multiple
+            label="File input ( jpeg and png )"
+            accept="image/png, image/jpeg"
+          ></v-file-input>
+        </v-card-text>
+
+        <v-sheet class="ma-12" v-else>
+          <v-row
+            class="fill-height"
+            align="center"
+            justify="center"
+          >
+            <v-progress-circular
+              indeterminate
+              color="purple"
+              size="80"
+            ></v-progress-circular>
+          </v-row>
+        </v-sheet>
+
+        <v-card-actions>
+          <v-container class="text-center">
+            <v-btn
+              v-if="uploadList.length"
+              dark 
+              class="purple darken-3 mx-4" 
+              min-width="120"
+              @click="submit_upload_images"
+            >Submit</v-btn>
+            <v-btn
+              dark 
+              class="grey darken-2 mx-4"
+              min-width="120"
+              type="button"
+              @click="dialogUpload = !dialogUpload; uploadList = []"
+            >Close</v-btn>
+          </v-container>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- --------------------------------------------------------- -->
 
-  <!-- --------------------------------------------------------- -->
-  </div>
+    <!-- --------------------------------------------------------- -->
   </div>
 </template>
 
@@ -113,6 +177,7 @@
     name: 'Images',
     data: () => ({
       title: "Images",
+      loader: false,
       streamBase: "/api/stream/",
       data:[],
       streamReady:false,
@@ -127,6 +192,7 @@
         }
       ],
       dialogUpload: false,
+      uploadList: [],
       dialogDelete: false
     }),
     components: {
@@ -134,7 +200,8 @@
     },
     methods:{
       ...mapMutations([ "set_err", "reset_err" ]),
-    
+
+      //---------------------------------------------------
       call_thumbs(){
         axios.get( "/api/thumbs?b64_data=yes", this.$store.getters.create_bearer_auth_header)
         .then((res)=>{
@@ -147,13 +214,15 @@
         })
       },
 
+      //---------------------------------------------------
       is_selected(idx){
         if(this.selectedImages.includes(this.data[idx]._id)){
           return true
         }
         else return false
       },
-
+      
+      //---------------------------------------------------
       switch_selected(idx){
         if( this.selectedImages.includes(this.data[idx]._id) ){
           let delIdx = this.selectedImages.indexOf(this.data[idx]._id)
@@ -164,7 +233,17 @@
         }
       },
 
+      //---------------------------------------------------
+      selected_all_images(){
+        this.selectedImages = []
+        for(let idx in this.data){
+          this.selectedImages.push(this.data[idx]._id)
+        }
+      },
+
+      //---------------------------------------------------
       async submit_images_delete(){
+        this.loader = true
         let toRemove = {...this.selectedImages}
         for(let idx in toRemove){
           try{
@@ -175,20 +254,52 @@
             this.set_err(err.message)
           } 
         }
-
         for(let idx in toRemove){
           await this.remove_image_item_by_id(toRemove[idx])
         }
 
-        this.dialogDelete = !this.dialogDelete
+        this.loader = false
+        this.dialogDelete = false
       },
 
+      //---------------------------------------------------
       async remove_image_item_by_id(id){
         const item = this.data.find(thumb => thumb._id === id)
         this.data.splice(this.data.indexOf(item), 1)
         this.selectedImages.splice(this.selectedImages.indexOf(id), 1)
+      },
+
+      //---------------------------------------------------
+      async submit_upload_images(){
+        let tmpuploadList = {...this.uploadList}
+        this.uploadList = []
+        this.loader = true
+
+        // console.log(this.uploadList)
+        const config = this.$store.getters.create_bearer_auth_header
+        config.headers["Content-Type"] = "multipart/form-data"
+        
+        for(let idx in tmpuploadList){
+          const formData = new FormData();
+          formData.append("file", tmpuploadList[idx])
+          try{
+            await axios.post("/api/image", formData, config )
+          }
+          catch(err){
+            this.set_err(err.message)
+          }
+        }
+
+        this.loader = false
+        this.dialogUpload = false
+        this.call_thumbs()
       }
 
+
+      //---------------------------------------------------
+
+
+      //---------------------------------------------------
       
     },
     mounted: function(){

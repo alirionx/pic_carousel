@@ -148,7 +148,7 @@
             >Submit</v-btn>
             <v-btn
               dark 
-              class="grey mx-4"
+              class="grey darken-2 mx-4"
               min-width="120"
               type="button"
               @click="close_reset_password"
