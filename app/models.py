@@ -52,7 +52,7 @@ imageTypesCompression = {
 allowedImageLength = 8388608
 
 imageParas = {
-  "thumbHeight": 200,
+  "thumbHeight": 180,
   "maxImageHeigh": 800,
 }
 
