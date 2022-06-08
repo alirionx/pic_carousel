@@ -67,7 +67,8 @@
               required 
               label="Role" 
               v-model="editData.role" 
-              :items="ddRoles"></v-select>
+              :items="ddRoles">
+            </v-select>
             <v-text-field 
               class="pa-3 mx-8" 
               required 
@@ -197,7 +198,6 @@
 <script>
   // import HelloWorld from '../components/HelloWorld'
   import axios from 'axios'
-
   import { mapMutations } from 'vuex'
 
   export default {
