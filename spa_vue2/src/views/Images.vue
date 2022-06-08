@@ -1,10 +1,9 @@
 <template>
   <div class="text-center" >
-
     <!-- --------------------------------------------------------- -->
     <v-container class="mt-4 mb-0 pb-0">
       <v-row no-gutters>
-        <v-col class="text-left">
+        <v-col class="text-left" cols="8">
           <v-btn 
             dark
             small
@@ -30,7 +29,7 @@
             min-width="100"
             @click="selectedImages=[]"
             >un-select</v-btn>
-
+      
           <v-btn 
             :disabled="selectedImages.length==0"
             dark
@@ -41,82 +40,59 @@
             >Delete</v-btn>
         </v-col>
 
-        <v-col class="text-right">
+        <v-col cols="2">
+          <v-select
+            :items="sortTypes"
+            v-model="$store.state.images.sortSelected"
+            label="Sort" 
+            dense
+            solo
+            class="d-inline-flex mx-2"
+            @change="sort_data"
+          ></v-select>
+        </v-col>
+        <v-col class="text-right" cols="2">
           <v-select
             :items="viewItems"
-            v-model="viewSelected"
+            v-model="$store.state.images.viewSelected"
             label="View" 
             dense
             solo
-            class="d-inline-flex mx-3"
+            class="d-inline-flex mx-2"
           ></v-select>
         </v-col>
       </v-row>
     </v-container>
-      
-    <!-- --------------------------------------------------------- -->
-    <v-container class="mt-0 pt-0" v-if="viewSelected=='thumbs'">
-      <v-hover 
-        v-for="(thumb, idx) in data" :key="idx"
-        v-slot="{ hover }" 
-      >
-        <v-sheet
-          :elevation="hover ? 6 : 2"
-          :class="{ 'on-hover': hover, 'blue lighten-4': is_selected(idx) }"
-          class="pa-2 ma-3 d-inline-flex"
-          style="cursor:pointer;"
-          width="140"
-          
-          @click="switch_selected(idx)"
-        >
-          <v-img
-            :src="'data:'+thumb.contentType+';base64,'+thumb.b64Data"
-            aspect-ratio="1"
-          ></v-img>
-        </v-sheet>
-      </v-hover>
-    </v-container>
 
     <!-- --------------------------------------------------------- -->
-    <v-container class="mt-0 pt-0" v-if="viewSelected=='table'">
-    <v-simple-table 
-      v-if="viewSelected=='table'"
-      class="elevation-4 mx-2"
+    <ImagesThumbs 
+      v-if="$store.state.images.viewSelected=='thumbs'"
+      v-bind:data="data" 
+      v-bind:switch_selected="switch_selected" 
+      v-bind:is_selected="is_selected" 
+    />
+
+    <!-- ---------------------------- -->
+    <ImagesTable 
+      v-if="$store.state.images.viewSelected=='table'"
+      v-bind:data="data" 
+      v-bind:switch_selected="switch_selected" 
+      v-bind:is_selected="is_selected" 
+    />
+
+    <!-- --------------------------------------------------------- -->
+    <v-row
+      v-if="this.mainLoader"
+      class="fill-height mt-16 pt-16"
+      align="center"
+      justify="center"
     >
-      <template v-slot:default>
-      <thead>
-        <tr>
-          <th class="text-left">Thumb</th>
-          <th class="text-left">Filename</th>
-          <th class="text-left">Type</th>
-          <th class="text-left">Upload</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr 
-          v-for="(thumb, idx) in data" 
-          :key="idx" 
-          @click="switch_selected(idx)"
-          :class="{ 'blue lighten-5': is_selected(idx) }"
-        >
-          <td class="text-left ">
-            <v-img 
-              :src="'data:'+thumb.contentType+';base64,'+thumb.b64Data" 
-              aspect-ratio="1" 
-              width="50"
-              height="50"
-              class="ma-1"
-            ></v-img>
-          </td>
-          <td class="text-left">{{ thumb.filename }}</td>
-          <td class="text-left">{{ thumb.contentType }}</td>
-          <td class="text-left">{{ thumb.uploadDate.substring(0,16).replace("T", " - ") }}</td>
-        </tr>
-      </tbody>
-    </template>
-
-    </v-simple-table>
-    </v-container>
+      <v-progress-circular
+        indeterminate
+        color="purple"
+        size="120"
+      ></v-progress-circular>
+    </v-row>
 
     <!-- --------------------------------------------------------- -->
     <v-dialog
@@ -128,7 +104,7 @@
           Delete selected ({{selectedImages.length}}) images?
         </v-card-title>
 
-        <v-sheet class="ma-12" v-if="loader">
+        <v-sheet class="ma-12" v-if="snapLoader">
           <v-row
             class="fill-height"
             align="center"
@@ -145,7 +121,7 @@
         <v-card-actions>
           <v-container class="text-center">
             <v-btn
-              v-if="!loader"
+              v-if="!snapLoader"
               dark 
               class="purple darken-3 mx-4" 
               min-width="120"
@@ -173,7 +149,7 @@
         <v-card-title class="purple darken-3 white--text mb-2">
           Upload Images
         </v-card-title>
-        <v-card-text class="pt-6" v-if="!loader">
+        <v-card-text class="pt-6" v-if="!snapLoader">
           <v-file-input
             v-model="uploadList"
             small-chips
@@ -220,21 +196,26 @@
 
     <!-- --------------------------------------------------------- -->
 
-    <!-- --------------------------------------------------------- -->
   </div>
 </template>
 
 
 <script>
-  // import HelloWorld from '../components/HelloWorld'
+  import ImagesTable from '../components/ImagesTable'
+  import ImagesThumbs from '../components/ImagesThumbs'
   import axios from 'axios'
+
   import { mapMutations } from 'vuex'
 
   export default {
     name: 'Images',
+    components: {
+      ImagesTable,
+      ImagesThumbs,
+    },
     data: () => ({
       title: "Images",
-      viewSelected: "thumbs",
+      // viewSelected: "thumbs",
       viewItems: [
         { 
           value: "thumbs",
@@ -245,7 +226,30 @@
           text: "Table"
         }
       ],
-      loader: false,
+      sortTypes: [
+        { 
+          text: "Filename (ASC)",
+          value: ["filename", "asc"]
+        },
+        { 
+          text: "Filename (DESC)",
+          value: ["filename", "desc"]
+        },
+        { 
+          text: "Image-Type",
+          value: ["contentType"]
+        },
+        { 
+          text: "Uploaded (ASC)",
+          value: ["uploadDate", "asc"]
+        },
+        { 
+          text: "Uploaded (DESC)",
+          value: ["uploadDate", "desc"]
+        }
+      ],
+      mainLoader: false,
+      snapLoader: false,
       streamBase: "/api/stream/",
       data:[],
       streamReady:false,
@@ -263,14 +267,13 @@
       uploadList: [],
       dialogDelete: false
     }),
-    components: {
-      
-    },
+    
     methods:{
       ...mapMutations([ "set_err", "reset_err" ]),
 
       //---------------------------------------------------
-      call_thumbs(){
+      call_thumbs(loader=false){
+        if(loader) this.mainLoader = true
         axios.get( "/api/thumbs?b64_data=yes", this.$store.getters.create_bearer_auth_header)
         .then((res)=>{
           // console.log(res.data)
@@ -280,8 +283,26 @@
           // console.log(err.message)
           this.set_err(err.message)
         })
+        .finally(()=>{
+          this.sort_data()
+          this.mainLoader=false
+        })
       },
 
+      //---------------------------------------------------
+      sort_data(){
+        let sortAry = this.$store.state.images.sortSelected
+        // console.log(sortAry)
+        if(!sortAry) return
+        if(sortAry[1] == "desc"){
+          this.data.sort((b, a)=> a[sortAry[0]].localeCompare(b[sortAry[0]])) // !!!CRAZY!!!
+        }
+        else{
+          this.data.sort((a, b)=> a[sortAry[0]].localeCompare(b[sortAry[0]])) // !!!CRAZY!!!
+        }
+        
+      },
+      
       //---------------------------------------------------
       is_selected(idx){
         if(this.selectedImages.includes(this.data[idx]._id)){
@@ -311,7 +332,7 @@
 
       //---------------------------------------------------
       async submit_images_delete(){
-        this.loader = true
+        this.snapLoader = true
         let toRemove = {...this.selectedImages}
         for(let idx in toRemove){
           try{
@@ -325,8 +346,7 @@
         for(let idx in toRemove){
           await this.remove_image_item_by_id(toRemove[idx])
         }
-
-        this.loader = false
+        this.snapLoader = false
         this.dialogDelete = false
       },
 
@@ -341,7 +361,7 @@
       async submit_upload_images(){
         let tmpuploadList = {...this.uploadList}
         this.uploadList = []
-        this.loader = true
+        this.snapLoader = true
 
         // console.log(this.uploadList)
         const config = this.$store.getters.create_bearer_auth_header
@@ -358,11 +378,10 @@
           }
         }
 
-        this.loader = false
+        this.snapLoader = false
         this.dialogUpload = false
         this.call_thumbs()
       }
-
 
       //---------------------------------------------------
 
@@ -371,7 +390,7 @@
       
     },
     mounted: function(){
-      this.call_thumbs()
+      this.call_thumbs(true)
     }
     
   }

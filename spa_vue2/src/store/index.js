@@ -52,7 +52,12 @@ export default new Vuex.Store({
         roles: ["user", "admin"],
         auth: true
       }
-    ]
+    ],
+
+    images:{
+      viewSelected: "thumbs",
+      sortSelected: null
+    }
   },
   getters: {
     filtered_tabs(state){
