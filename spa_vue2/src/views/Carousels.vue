@@ -23,11 +23,11 @@
         :items="carouselsData"
         :search="search"
       >
-        <template v-slot:item.imgLen="{item}">
+        <template v-slot:[`item.imgLen`]="{item}">
           <div v-if="item.images">{{item.images.length}}</div>
           <div v-else>0</div>
         </template>
-        <template v-slot:item.act="{item}">
+        <template v-slot:[`item.act`]="{item}">
           <v-btn light icon @click="open_dialog_carousel(carouselsData.indexOf(item))">
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
