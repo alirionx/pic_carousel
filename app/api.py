@@ -33,8 +33,10 @@ app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 #-Initial Fuctions for App Prep---------------------------------
-tools.initialize_db()
-
+try:
+  tools.initialize_db()
+except:
+  print("Failed to connect to DB")
 
 #-Auth Helper Functions-----------------------------------------
 
