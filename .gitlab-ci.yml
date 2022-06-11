@@ -7,15 +7,15 @@
 docker-build:
   # Use the official docker image.
   stage: build
-  image: docker:dind
-  # services:
-  #   - docker:dind
+  image: docker:git
+  services:
+    - docker:dind
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   # Default branch leaves tag empty (= latest tag)
   # All other branches are tagged with the escaped branch name (commit ref slug)
   script:
-    - sleep 60
+    - sleep 30
     - |
       if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
         tag=""
