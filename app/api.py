@@ -20,7 +20,7 @@ from app.models import imageTypesCompression, allowedImageLength
 
 #-Build the App-------------------------------------------------
 app = FastAPI()
-app.mount("/", StaticFiles(directory="app/html", html=True), name="static")
+
 
 # origins = [
 #   "http://127.0.0.1:5500",
@@ -387,6 +387,10 @@ async def api_stream_get(id:str):
 
 #--------------------------------------------
 
+
+#-Serve Static Content (Compiled SPA)----------------
+# Muss ans ende des Skripts, weil sonst di anderen routen überschieben werden ;(
+app.mount("/", StaticFiles(directory="app/html", html=True), name="static")
 
 
 #-TEST AREA------------------------------------------
