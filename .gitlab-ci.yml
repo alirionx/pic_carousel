@@ -6,9 +6,9 @@
 
 docker-build:
   # Use the official docker image.
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: "tcp://localhost:2375"
+  # variables:
+  #   DOCKER_TLS_CERTDIR: ""
+  #   DOCKER_HOST: "tcp://localhost:2375"
 
   stage: build
   image: docker:git
