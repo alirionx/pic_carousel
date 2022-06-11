@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, status, HTTPException, UploadFile, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 # from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,6 +20,8 @@ from app.models import imageTypesCompression, allowedImageLength
 
 #-Build the App-------------------------------------------------
 app = FastAPI()
+app.mount("/", StaticFiles(directory="app/html", html=True), name="static")
+
 # origins = [
 #   "http://127.0.0.1:5500",
 # ]
@@ -47,7 +50,7 @@ def check_admin(token):
 
 
 #-The Routes----------------------------------------------------
-@app.get("/", tags=["root"])
+# @app.get("/", tags=["root"])
 @app.get("/api", tags=["root"])
 async def api_root_get() -> dict:
   return {"message": "Welcome to the API of the Pic Carousel App"}
