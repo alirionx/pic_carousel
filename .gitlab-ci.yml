@@ -1,9 +1,9 @@
 docker-build:
   
   #Falls der Runner auf K8S nicht auf tcp anstatt unix sock konfiguriert ist... EVIL!
-  # variables:
-  #   DOCKER_TLS_CERTDIR: ""
-  #   DOCKER_HOST: "tcp://localhost:2375"
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: "tcp://localhost:2375"
 
   stage: build
   image: docker:git
@@ -14,7 +14,6 @@ docker-build:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   
   script:
-    - sleep 30
     - |
       if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
         tag=""
