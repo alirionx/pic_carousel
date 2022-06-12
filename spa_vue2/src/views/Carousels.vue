@@ -20,7 +20,7 @@
       </v-card-title>
       <v-data-table
         :headers="tableHeaders"
-        :items="carouselsData"
+        :items="$store.state.dataStore.carousels"
         :search="search"
       >
         <template v-slot:[`item.imgLen`]="{item}">
@@ -28,7 +28,7 @@
           <div v-else>0</div>
         </template>
         <template v-slot:[`item.act`]="{item}">
-          <v-btn light icon @click="open_dialog_carousel(carouselsData.indexOf(item))">
+          <v-btn light icon @click="open_dialog_carousel($store.state.dataStore.carousels.indexOf(item))">
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
         </template>
@@ -104,7 +104,71 @@
       </form>
     </v-dialog>
 
-    <!-- --------------------------------------------------------- -->
+    <!-- -------------------------------------------------- -->
+    <v-dialog
+      v-model="dialogConfig"
+      fullscreen
+      hide-overlay
+      transition="dialog-bottom-transition"
+      scrollable
+      >
+      <v-card title>
+        <v-toolbar flat dark color="purple darken-3" >
+          <v-btn icon dark @click="dialogConfig = !dialogConfig" type="button">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          <v-toolbar-title>Carousel Configuration: {{this.carouselConfig.name}}</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-toolbar-items >
+            <v-btn icon dark type="submit">Save</v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+
+        <v-card-text class="text-center">
+          <v-btn 
+            small
+            dark
+            color="blue-grey darken-4" 
+            min-width="140"
+            @click="dialogDelete = !dialogDelete"
+            class="mx-4">Delete Carousel</v-btn>
+        </v-card-text>
+
+      </v-card>
+    </v-dialog>
+
+    <!-- -------------------------------------------------- -->
+    <!-- -------------------------------------------------- -->
+    <v-dialog
+      v-model="dialogDelete"
+      max-width="500px"
+    >
+      <v-card class="pb-6">
+        <v-card-title class="purple darken-3 white--text mb-6">
+          Delete carousel "{{carouselConfig.name}}"?
+        </v-card-title>
+        <v-card-actions>
+          <v-container class="text-center">
+            <v-btn
+              dark 
+              class="purple darken-3 mx-4" 
+              min-width="120"
+              type="submit"
+              @click="submit_carousel_delete"
+            >Submit</v-btn>
+            <v-btn
+              dark 
+              class="grey darken-1 mx-4"
+              min-width="120"
+              type="button"
+              @click="dialogDelete = !dialogDelete"
+            >Close</v-btn>
+          </v-container>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    
+    
     <!-- -------------------------------------------------- -->
    
   </div>
@@ -130,9 +194,12 @@
         { text: 'Action', value: 'act' }
       ],
       search: null,
-      carouselsData: [],
 
       dialogAdd: false,
+      dialogConfig: false,
+      dialogDelete: false,
+
+      carouselConfig: {},
       carouselAdd: {},
       carouselAddTmp: { 
         state:"private",
@@ -169,20 +236,7 @@
       
     },
     methods:{
-      ...mapMutations([ "set_err", "reset_err" ]),
-
-      //-------------------------------------------
-      call_carousels_data(){
-        axios.get("/api/carousels", this.$store.getters.create_bearer_auth_header)
-        .then((res)=>{
-          // console.log(res.data)
-          this.carouselsData = res.data
-        })
-        .catch((err)=>{
-          // console.log(err.message)
-          this.set_err(err.message)
-        })
-      },
+      ...mapMutations([ "set_err", "reset_err", 'add_carousel', "remove_carousel_by_item" ]),
 
       //-------------------------------------------
       submit_add(){
@@ -196,7 +250,7 @@
           // console.log(res.data._id)
           let newItem = {...this.carouselAdd}
           newItem._id = res.data._id
-          this.carouselsData.push(newItem)
+          this.add_carousel(newItem)
         })
         .catch((err)=>{
           this.set_err(err.message)
@@ -213,8 +267,28 @@
       },
 
       //-------------------------------------------
+      submit_carousel_delete(){
+        axios.delete(
+          "/api/carousels/"+this.carouselConfig._id, 
+          this.$store.getters.create_bearer_auth_header
+        )
+        .then((res)=>{
+          this.dialogDelete = false
+          this.dialogConfig = false
+          this.remove_carousel_by_item(this.carouselConfig)
+        })
+        .catch((err)=>{
+          this.set_err(err.message)
+        })
+      },
+
+
+      //-------------------------------------------
       open_dialog_carousel(idx){
-        console.log("open dialog: ", JSON.stringify(this.carouselsData[idx]) )
+        console.log("open dialog: ", JSON.stringify(this.$store.state.dataStore.carousels[idx]) )
+        this.carouselConfig = {...this.$store.state.dataStore.carousels[idx]}
+        this.dialogConfig = true
+
       },
 
 
@@ -223,7 +297,6 @@
 
     },
     mounted: function(){
-      this.call_carousels_data(),
       this.carouselAdd = {...this.carouselAddTmp}
     }
   }

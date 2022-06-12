@@ -1,12 +1,14 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-// import axios from 'axios'
+import axios from 'axios'
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
+    init: false,
+
     username: null,
     role: null,
     bearer: null,
@@ -54,10 +56,20 @@ export default new Vuex.Store({
       }
     ],
 
+    loader:{
+      main: false,
+      snap: false
+    },
+
     images:{
       viewSelected: "thumbs",
       sortSelected: null
+    },
+    dataStore:{
+      thumbs:[],
+      carousels:[]
     }
+
   },
   getters: {
     filtered_tabs(state){
@@ -84,7 +96,7 @@ export default new Vuex.Store({
 
     create_bearer_auth_header(state){
       return {headers: { Authorization: `Bearer ${state.bearer}` }}
-    }
+    },
 
   },
 
@@ -111,10 +123,37 @@ export default new Vuex.Store({
     reset_err(state){
       state.err = false
       state.err_msg = null
+    },
+
+    set_loader(state, typ){
+      state.loader[typ] = true
+    },
+    reset_loader(state, typ){
+      state.loader[typ] = false
+    },
+
+    set_thumbs_data(state, data){
+      state.dataStore.thumbs = data
+    },
+    set_carousels_data(state, data){
+      state.dataStore.carousels = data
+    },
+
+    add_carousel(state, item){
+      state.dataStore.carousels.push(item)
+    },
+    remove_carousel_by_item(state, item){
+      let idx = state.dataStore.carousels.findIndex(elm => elm._id == item._id) //UIUIUIUIUI
+      // console.log(idx) 
+      state.dataStore.carousels.splice(idx, 1)
     }
+    
+
+    
 
   },
   actions: {
+    //-----------------------------------------------
     login(context, token){
       localStorage.setItem("bearer", token)
       context.commit('set_userdata', token) // => SAUBER!!!
@@ -125,10 +164,12 @@ export default new Vuex.Store({
     logout(context){
       context.commit('reset_userdata')
       localStorage.removeItem("bearer")
+      context.state.init = false
       // this.state.username = null
       // this.state.role = null
     },
     
+    //-----------------------------------------------
     check_token(context){
       var chk = false
       let token = localStorage.getItem("bearer")
@@ -140,9 +181,15 @@ export default new Vuex.Store({
           chk = true
         }
       }
+      if(token && !this.state.init){
+        this.dispatch('call_thumbs')
+        this.dispatch('call_carousels')
+        this.state.init = true
+      }
       return chk
     },
-
+    
+    //-----------------------------------------------
     set_active_tab(context){
       for(let idx in this.getters.filtered_tabs){ //UIUIUIUIUIUIU
         if(this.getters.filtered_tabs[idx].lnk == location.hash.substring(1)){
@@ -150,7 +197,64 @@ export default new Vuex.Store({
           break;
         }
       }
-    }
+    },
+    
+    //-----------------------------------------------
+    call_thumbs(context){
+      context.commit('set_loader', 'main')
+      new Promise((resolve, reject)=>{
+        axios.get( "/api/thumbs?b64_data=yes", this.getters.create_bearer_auth_header)
+        .then((res)=>{
+          // console.log(res.data)
+          context.commit('set_thumbs_data', res.data)
+          context.dispatch('sort_thumbs')
+          resolve()
+        })
+        .catch((err)=>{
+          // console.log(err.message)
+          context.commit('set_err', err.message)
+          reject()
+        })
+        .finally(()=>{
+          context.commit('reset_loader', 'main')
+        })
+      })
+    },
+    sort_thumbs(context){
+      let sortAry = this.state.images.sortSelected
+      // console.log(this.state.dataStore.thumbs)
+      if(!sortAry) return
+      let sortedData = JSON.parse(JSON.stringify(this.state.dataStore.thumbs))
+      if(sortAry[1] == "desc"){
+        sortedData.sort((b, a)=> a[sortAry[0]].localeCompare(b[sortAry[0]])) // !!!CRAZY!!!
+      }
+      else{
+        sortedData.sort((a, b)=> a[sortAry[0]].localeCompare(b[sortAry[0]])) // !!!CRAZY!!!
+      }
+      context.commit("set_thumbs_data", sortedData) // Evtl. nen bisschen übertrieben
+    },
+
+    //-----------------------------------------------
+    call_carousels(context){
+      context.commit('set_loader', 'main')
+      new Promise((resolve, reject)=>{
+        axios.get( "/api/carousels", this.getters.create_bearer_auth_header)
+        .then((res)=>{
+          // console.log(res.data)
+          context.commit('set_carousels_data', res.data)
+          resolve()
+        })
+        .catch((err)=>{
+          // console.log(err.message)
+          context.commit('set_err', err.message)
+          reject()
+        })
+        .finally(()=>{
+          context.commit('reset_loader', 'main')
+        })
+      })
+    },
+
   },
   modules: {
   }

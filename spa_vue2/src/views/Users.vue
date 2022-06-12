@@ -42,7 +42,7 @@
       transition="dialog-bottom-transition"
       scrollable
       >
-      <v-card tile>
+      <v-card title>
         <form @submit.prevent="submit_user_add_edit">
         <v-toolbar flat dark color="purple darken-3" >
           <v-btn icon dark @click="close_dialog_user(cancel=true)" type="button">
