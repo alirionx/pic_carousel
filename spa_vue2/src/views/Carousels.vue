@@ -124,6 +124,24 @@
           </v-toolbar-items>
         </v-toolbar>
 
+        <v-card-text class="text-left px-1" >
+          <div style="height:210px; overflow:auto;">
+          <v-sheet
+            class="pa-2 ma-3 d-inline-flex elevation-4"
+            style="cursor:pointer;"
+            :width="80"
+            v-for="(thumb,idx) in $store.state.dataStore.thumbs" :key="idx"
+          >
+            <v-img
+              :src="'data:'+thumb.contentType+';base64,'+thumb.b64Data"
+              aspect-ratio="1"
+              @click="print_something(idx)"
+            ></v-img>
+          </v-sheet>
+          </div>
+        </v-card-text>
+
+
         <v-card-text class="text-center">
           <v-btn 
             small
@@ -179,12 +197,15 @@
   // import HelloWorld from '../components/HelloWorld'
   import axios from 'axios'
   import { mapMutations } from 'vuex'
+  import ImagesThumbs from '../components/ImagesThumbs'
 
   export default {
     name: 'Carousels',
+    components: {
+      ImagesThumbs,
+    },
     data: () => ({
       title: "Carousels",
-      title: "Users",
       tableHeaders: [
         { text: 'Name', value: 'name' },
         { text: 'Description', value: 'description' },
@@ -231,10 +252,10 @@
           value: "disabled "
         }
       ],
+
     }),
-    components: {
-      
-    },
+  
+
     methods:{
       ...mapMutations([ "set_err", "reset_err", 'add_carousel', "remove_carousel_by_item" ]),
 
@@ -285,13 +306,20 @@
 
       //-------------------------------------------
       open_dialog_carousel(idx){
-        console.log("open dialog: ", JSON.stringify(this.$store.state.dataStore.carousels[idx]) )
         this.carouselConfig = {...this.$store.state.dataStore.carousels[idx]}
         this.dialogConfig = true
 
       },
 
+      //-------------------------------------------
+      is_selected(idx){
+        return false
+      },
 
+      //-------------------------------------------
+      print_something(msg){
+        console.log(msg)
+      },
       //-------------------------------------------
 
 

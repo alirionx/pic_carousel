@@ -9,7 +9,7 @@
         :class="{ 'on-hover': hover, 'blue lighten-4': is_selected(idx) }"
         class="pa-2 ma-3 d-inline-flex"
         style="cursor:pointer;"
-        width="140"
+        :width="thumWidth"
         
         @click="switch_selected(idx)"
       >
@@ -28,10 +28,21 @@
     props:{
       data: Array,
       switch_selected: Function,
-      is_selected: Function
+      is_selected: Function,
+      thumb_width: Number
     },
     data: () => ({
-    
+      thumWidth: 140
     }),
+    methods:{
+      set_thumb_width(){
+        if(this.thumb_width){
+          this.thumWidth = this.thumb_width
+        }
+      }
+    },
+    mounted: function(){
+      this.set_thumb_width()
+    }
   }
 </script>

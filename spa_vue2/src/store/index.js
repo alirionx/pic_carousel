@@ -143,7 +143,7 @@ export default new Vuex.Store({
       state.dataStore.carousels.push(item)
     },
     remove_carousel_by_item(state, item){
-      let idx = state.dataStore.carousels.findIndex(elm => elm._id == item._id) //UIUIUIUIUI
+      let idx = state.dataStore.carousels.findIndex(elm => elm._id == item._id) //UIUIUI
       // console.log(idx) 
       state.dataStore.carousels.splice(idx, 1)
     }
