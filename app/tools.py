@@ -11,7 +11,7 @@ from io import BytesIO, StringIO
 
 #--------------------------------------------------------------------
 def create_mongo_cli(cli_only=False):
-  mongoCli = pymongo.MongoClient("mongodb://%s:%s/" %(configMap.MONGODB_HOST, configMap.MONGODB_PORT))
+  mongoCli = pymongo.MongoClient("mongodb://%s:%s/" %(configMap.MONGODB_HOST, int(configMap.MONGODB_PORT)))
   if cli_only:
     return mongoCli
   mongoDb = mongoCli[configMap.MONGODB_DBNAME]
@@ -19,7 +19,7 @@ def create_mongo_cli(cli_only=False):
 
 #--------------------------
 def create_gridfs_cli():
-  mongoCli = pymongo.MongoClient("mongodb://%s:%s/" %(configMap.MONGODB_HOST, configMap.MONGODB_PORT))
+  mongoCli = pymongo.MongoClient("mongodb://%s:%s/" %(configMap.MONGODB_HOST, int(configMap.MONGODB_PORT)))
   mongoDb = mongoCli[configMap.MONGODB_GRIDFSDB]
   gridFsCli =  gridfs.GridFS(mongoDb)
   return gridFsCli
