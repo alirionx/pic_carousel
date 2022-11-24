@@ -1,5 +1,3 @@
-from imp import reload
-from mimetypes import guess_type
 import uvicorn
 
 if __name__ == "__main__":
